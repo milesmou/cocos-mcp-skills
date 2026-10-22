@@ -1,0 +1,13 @@
+# Local upstream snapshots and validation output
+/.work/
+/exports/
+
+# JavaScript dependencies and logs
+node_modules/
+*.log
+__pycache__/
+*.pyc
+
+# OS metadata
+.DS_Store
+Thumbs.db

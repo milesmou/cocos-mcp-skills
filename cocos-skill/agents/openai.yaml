@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cocos Creator"
+  short_description: "配合 Cocos MCP 完成 UI 蓝图、资源映射、拼装、美术替换与任务验收"
+  default_prompt: "使用 $cocos-skill 分析目标 Creator 工程的 UI，配合 MCP 完成拼装和验收。"

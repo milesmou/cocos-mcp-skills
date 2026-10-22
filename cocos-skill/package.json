@@ -1,0 +1,13 @@
+{
+  "name": "cocos-skill",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cocos Creator task workflows, UI planning and verification helpers",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "check": "node --check scripts/validate-project.mjs",
+    "test": "node --test"
+  }
+}
