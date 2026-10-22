@@ -6,6 +6,6 @@
 
 默认安装入口改为 Codex 侧本地 MCP：增加工程桥接检查与按需安装、重启状态返回、工程身份校验和连接文件发现。引擎操作仍由工程内桥接执行；保留原 HTTP/stdio 代理供已有客户端兼容。安装和重新连接流程见 [CODEX_SETUP.md](docs/CODEX_SETUP.md)。
 
-`lib/creator-bridge/`、`panel/prefab-preview.js`、`compat/creator-bridge/` 及 `docs/creator-bridge/` 的桥接与操作说明来自 [milesmou/cocos3-skill](https://github.com/milesmou/cocos3-skill)，提交为 `8cb5e0f41114bc0bae89ee601b54277dd0ed2bb1`。文档从技能侧迁入后调整路径与术语，避免两处维护。此部分不属于 Funplay 的 MIT 授权内容，具体见 [桥接来源说明](compat/creator-bridge/NOTICE.md)。
+`lib/creator-bridge/`、`panel/prefab-preview.js`、`compat/creator-bridge/` 及 `docs/creator-bridge/` 的桥接与操作说明来自原 `milesmou/cocos3-skill`（仓库已删除），导入提交为 `8cb5e0f41114bc0bae89ee601b54277dd0ed2bb1`，现由本仓库维护。文档从技能侧迁入后调整路径与术语，避免两处维护。此部分不属于 Funplay 的 MIT 授权内容，具体见 [桥接来源说明](compat/creator-bridge/NOTICE.md)。
 
 `preview-template/` 基于用户提供的 MyCookingGirl Creator 3.8.8 模板，保留节点树面板并新增运行时 JavaScript 查询。它与来自 cocos3-skill 的桥接内容单独记录许可，不属于 Funplay 的 MIT 授权范围。

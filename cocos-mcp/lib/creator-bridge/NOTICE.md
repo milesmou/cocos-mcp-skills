@@ -1,1 +1,1 @@
-来源：milesmou/cocos3-skill，提交 8cb5e0f41114bc0bae89ee601b54277dd0ed2bb1。原认证服务和场景辅助方法从 compat/creator-bridge/assets/ 迁入本目录，Prefab 渲染器迁至 ../../panel/prefab-preview.js。上游快照没有独立 LICENSE，不属于外层 Funplay MIT 授权范围。详见 ../../NOTICE.md。
+来源：原 milesmou/cocos3-skill（仓库已删除），导入提交 8cb5e0f41114bc0bae89ee601b54277dd0ed2bb1，现由本仓库维护。原认证服务和场景辅助方法从 compat/creator-bridge/assets/ 迁入本目录，Prefab 渲染器迁至 ../../panel/prefab-preview.js。上游快照没有独立 LICENSE，不属于外层 Funplay MIT 授权范围。详见 ../../NOTICE.md。

@@ -33,4 +33,4 @@ Agent 会连接目标工程，首次使用时安装唯一插件 `cocos-mcp-bridg
 
 ## 来源
 
-`cocos-mcp` **fork 自 [FunplayAI/funplay-cocos-mcp](https://github.com/FunplayAI/funplay-cocos-mcp)**，保留 Funplay MIT 声明；技能与桥接辅助能力整合自 [milesmou/cocos3-skill](https://github.com/milesmou/cocos3-skill)。各部分的来源和许可边界见 [UPSTREAM.md](UPSTREAM.md)。
+`cocos-mcp` **fork 自 [FunplayAI/funplay-cocos-mcp](https://github.com/FunplayAI/funplay-cocos-mcp)**，保留 Funplay MIT 声明。技能与桥接辅助能力由本仓库统一维护，历史来源和许可边界见 [UPSTREAM.md](UPSTREAM.md)。
