@@ -3,7 +3,7 @@
 
     /** 当前普通 Web 预览的服务端口。 */
     const previewPort = Number(location.port || 7456);
-    /** Creator 扩展提供的本机只读状态中继地址。 */
+    /** Creator 扩展提供的本机预览中继地址，Agent 命令由认证桥接发起。 */
     const relayOrigin = `http://127.0.0.1:${previewPort + 1}`;
     /** 当前预览页签实例 ID 的会话存储键。 */
     const storageKey = 'cocos3-codex-runtime-instance';
@@ -1007,14 +1007,14 @@
             return button;
         }
 
-        /** 将节点路径写入系统剪贴板；剪贴板 API 不可用时回退到浏览器复制命令。 */
-        async function copyNodePath(path) {
+        /** 将文本写入系统剪贴板；剪贴板 API 不可用时回退到浏览器复制命令。 */
+        async function copyTextToClipboard(text) {
             try {
-                await navigator.clipboard.writeText(path);
+                await navigator.clipboard.writeText(text);
                 return;
             } catch {
                 const textarea = createElement('textarea');
-                textarea.value = path;
+                textarea.value = text;
                 textarea.readOnly = true;
                 textarea.style.position = 'fixed';
                 textarea.style.left = '-10000px';
@@ -1026,9 +1026,23 @@
             }
         }
 
-        /** 创建节点名称行末尾的复制路径和打印对象按钮。 */
+        /** 创建节点名称行末尾的复制名称、复制路径和打印对象按钮。 */
         function createNodeActionButtons(item) {
             const actions = createElement('div', 'rnt-node-actions');
+            const copyNameButton = createElement('button', 'rnt-node-action', 'N');
+            copyNameButton.type = 'button';
+            copyNameButton.title = '复制节点名称';
+            copyNameButton.setAttribute('aria-label', `复制 ${item.name} 的节点名称`);
+            copyNameButton.addEventListener('click', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                void copyTextToClipboard(item.name).then(() => {
+                    summary.textContent = `已复制节点名称：${item.name}`;
+                }).catch(error => {
+                    summary.textContent = `复制节点名称失败：${error instanceof Error ? error.message : String(error)}`;
+                });
+            });
+
             const copyButton = createElement('button', 'rnt-node-action', '⧉');
             copyButton.type = 'button';
             copyButton.title = '复制节点路径';
@@ -1036,7 +1050,7 @@
             copyButton.addEventListener('click', event => {
                 event.preventDefault();
                 event.stopPropagation();
-                void copyNodePath(item.path).then(() => {
+                void copyTextToClipboard(item.path).then(() => {
                     summary.textContent = `已复制节点路径：${item.path}`;
                 }).catch(error => {
                     summary.textContent = `复制节点路径失败：${error instanceof Error ? error.message : String(error)}`;
@@ -1059,7 +1073,7 @@
                 summary.textContent = `已在控制台打印节点：${item.path}`;
             });
 
-            actions.append(copyButton, printButton);
+            actions.append(copyNameButton, copyButton, printButton);
             return actions;
         }
 
@@ -1418,6 +1432,10 @@
         try {
             if (type === 'node-stats') payload = await captureNodeStats(options);
             else if (type === 'runtime-screenshot') payload = await captureRuntimeScreenshot();
+            else if (type === 'runtime-javascript') {
+                if (!globalThis.__cocosAgentRuntime) throw new Error('runtime-agent.js is missing; reinstall the preview template and refresh this preview');
+                payload = { instanceId, ...await globalThis.__cocosAgentRuntime.execute(options) };
+            }
             else throw new Error(`unsupported runtime request type: ${type}`);
         } catch (error) {
             payload = {
@@ -1438,7 +1456,7 @@
     events.onmessage = event => {
         try {
             const request = JSON.parse(event.data);
-            if ((request?.type === 'node-stats' || request?.type === 'runtime-screenshot') && request.requestId) {
+            if (['node-stats', 'runtime-screenshot', 'runtime-javascript'].includes(request?.type) && request.requestId) {
                 void reply(request.requestId, request.type, request.options);
             }
         } catch {

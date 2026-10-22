@@ -23,7 +23,7 @@ async function previewToolbarCommand(command) {
     throw new Error('Unsupported preview toolbar command.');
   }
 
-  const lock = Symbol.for('funplay-cocos-mcp.preview-operation');
+  const lock = Symbol.for('cocos-mcp-bridge.preview-operation');
   const busy = () => Boolean(vm[lock] || vm.isPlaying || vm.isLoading || vm.gameView.isStep);
   const readPreview = async () => {
     // Creator 3.8 returns undefined/null (depending on IPC context) when there

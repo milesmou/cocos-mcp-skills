@@ -1,6 +1,6 @@
 # 控制 Cocos Creator 编辑器
 
-默认操作使用已连接的 MCP 工具或 `execute_javascript`，见 [编辑器执行说明](../EDITOR_WORKFLOW.md)。本文维护可选 Creator 3.8 认证桥接的安装与使用，CLI 示例只在桥接实际安装后适用。
+默认操作使用已连接的 MCP 工具或 `execute_javascript`，见 [编辑器执行说明](../EDITOR_WORKFLOW.md)。本文维护统一 Creator 3.8 认证桥接的安装与使用，CLI 示例只在桥接实际安装后适用。
 
 通过 Creator 官方消息修改打开的场景、Prefab 和资源，不直接改写 Prefab 序列化文件。
 
@@ -8,7 +8,9 @@
 
 ## 首次安装
 
-1. 先确认目标工程是否已有 Creator 实例。每个工程最多只能运行一个实例；如果工程已经打开，必须复用现有实例，不得再次启动。
+默认由 Codex 侧 `connect_cocos_project` 一并安装统一插件和预览模板；只安装唯一插件 `cocos-mcp-bridge`，包含全部辅助能力，见 [Codex 安装说明](../CODEX_SETUP.md)。缺少插件时返回 `restart_required`，提示用户保存并重启 Creator；不由工具强制关闭编辑器。以下 CLI 仅供手动兼容流程使用。
+
+1. 先确认目标工程是否已有 Creator 实例。每个工程最多只能运行一个实例；如果工程已经打开，不得另开一个实例。
 2. 工程未打开时，使用 `cocoscreator` 命令启动目标工程：
 
    ```powershell
@@ -22,8 +24,8 @@
    node "<MCP目录>/compat/creator-bridge/scripts/install-bridge.mjs" --project "<工程目录>"
    ```
 
-4. 在 Creator 的扩展管理器中启用 `cocos3-codex-bridge`，然后调用 Creator 顶部菜单的 `开发者 -> 重新加载`。导入 Creator 编辑器插件，或修改已安装插件的代码和配置后，都必须再次调用该重新加载功能；不要用重启 Creator 代替，也不要只刷新扩展管理器。修改 AssetDB 管理的工程资源（`db://assets/...`）不执行此步骤，也不重启工程，只等待资源导入完成。
-5. 等待 Creator 界面重新加载完成，再检查连接：
+4. 提示用户保存工作并完全退出、重新打开该工程的 Creator，在扩展管理器中确认 `cocos-mcp-bridge` 已启用。插件安装或更新后以重启并重新检查连接为准；修改普通 AssetDB 资源只等待导入完成。
+5. 等待用户重启 Creator 后，再检查连接：
 
    ```powershell
    node "<MCP目录>/compat/creator-bridge/scripts/cocos-editor.mjs" --project "<工程目录>" status
@@ -38,7 +40,7 @@
    node "<MCP目录>/compat/creator-bridge/scripts/cocos-editor.mjs" --project "<工程目录>" --timeout 60000 wait idle
    ```
 
-连接文件只写入目标工程的 `temp/cocos3-codex-bridge.json`，服务只监听 `127.0.0.1`，每次扩展启动都会生成新令牌。
+连接文件只写入目标工程的 `temp/cocos-mcp-bridge.json`，服务只监听 `127.0.0.1`，每次扩展启动都会生成新令牌。
 
 所有一次性截图、预览、报告、调试转储和中间文件必须写入目标工程的 `temp/<skill-name>/`。桥接提供的 PNG 导出接口会拒绝 `temp` 目录以外的输出路径。
 
@@ -55,6 +57,10 @@ node "<MCP目录>/compat/creator-bridge/scripts/cocos-editor.mjs" --project "<�
 ```
 
 完整方法和参数见 [桥接 API](api.md)。
+
+## 运行时 JavaScript
+
+使用 `execute_javascript` 的 `context: "runtime"` 查询正在运行的游戏数据，详见 [运行时数据查询](runtime-javascript.md)。统一桥接包含认证执行入口，返回实际页面、场景和序列化结果。
 
 ## 运行时节点统计
 
@@ -78,7 +84,7 @@ node "<MCP目录>/compat/creator-bridge/scripts/cocos-editor.mjs" --project "<�
 
 - 启动或重新启动工程时使用 `cocoscreator --project "<工程目录>"`。
 - 同一个工程最多运行一个 Creator 实例；启动前检查现有实例，已打开时直接复用。重启时必须先完全关闭旧实例。
-- 导入 Creator 编辑器插件，或修改插件代码和配置后，调用顶部菜单 `开发者 -> 重新加载`，再等待桥接重新就绪；这属于编辑器内重新加载，不是关闭并重启 Creator。
+- 安装或更新桥接插件后提示用户保存并完全重启 Creator，之后重新连接；不自动关闭编辑器。
 - 修改 AssetDB 管理的工程资源（`db://assets/...`）后只等待 AssetDB idle；不要因此重新加载编辑器或重启工程。
 - 修改前先查询目标 UUID、当前属性和 Prefab 状态。
 - 优先使用 `scene` 消息执行修改，以进入 Creator 撤销记录。

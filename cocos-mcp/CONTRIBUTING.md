@@ -1,112 +1,25 @@
-# Contributing to Funplay MCP for Cocos
+# Contributing to cocos-mcp-skills
 
-Thanks for your interest in contributing to Funplay MCP for Cocos.
+This source integration is forked from [FunplayAI/funplay-cocos-mcp](https://github.com/FunplayAI/funplay-cocos-mcp). Follow the repository [AGENTS.md](../AGENTS.md) and preserve the source and license boundaries in [UPSTREAM.md](../UPSTREAM.md).
 
-This repository is a Cocos Creator editor extension that embeds an MCP server. Contributions that improve reliability, editor compatibility, documentation, and AI-driven Cocos workflows are welcome.
+Clone `https://github.com/milesmou/cocos-mcp-skills`, then run `node scripts/install-codex.js` from the repository root. The root has no npm project. The Codex MCP name is `cocos-mcp`; the single Creator extension is `cocos-mcp-bridge`.
 
-## Development Setup
+Use `connect_cocos_project` with an absolute Creator 3.8.x project path. It installs the missing extension and preview template. Legacy `funplay-cocos-mcp` and `cocos3-codex-bridge` require explicit `migrateLegacy: true`; complete backups are retained under the target project's `temp/cocos-mcp-install/`. Save and fully restart Creator after installation or migration, then reconnect and verify the project identity. Do not close the user's editor automatically.
 
-1. Clone the repository:
+Keep MCP/editor implementation in this directory and combined task guidance in `../cocos-skill/`. Authentication, scene helpers and runtime relay live in `lib/creator-bridge/`; `compat/creator-bridge/` only retains CLI compatibility and tests. New scene helper methods must use the `bridge` prefix to avoid changing MCP method signatures.
 
-```bash
-git clone https://github.com/FunplayAI/funplay-cocos-mcp.git
-cd funplay-cocos-mcp
+Run the relevant existing checks from the repository root:
+
+```powershell
+npm --prefix cocos-mcp run check
+npm --prefix cocos-mcp run check:codex
+npm --prefix cocos-mcp run check:compat
+npm --prefix cocos-mcp test
+npm --prefix cocos-mcp run docs:check
+npm --prefix cocos-skill run check
+npm --prefix cocos-skill test
 ```
 
-2. Install it into a Cocos project as an extension:
+After tool changes, regenerate `docs/TOOLS.md` with `npm --prefix cocos-mcp run docs:generate`. Validate editor-dependent behavior in a real target project and report anything that could not be exercised. Keep temporary output in repository `.work/`, or the external project's `temp/cocos-skill/<task>/`.
 
-```bash
-mkdir -p /path/to/your-cocos-project/extensions
-ln -s "$PWD" /path/to/your-cocos-project/extensions/funplay-cocos-mcp
-```
-
-You can also copy the repository folder instead of using a symlink.
-
-3. Restart Cocos Creator or reload extensions.
-
-4. Open the panel:
-
-```text
-Funplay > MCP Server
-```
-
-## Validation
-
-Before opening a pull request, run:
-
-```bash
-npm run check
-```
-
-This validates the JavaScript syntax for the extension entry points and helper modules.
-
-If your change affects live MCP behavior, also test against a running Cocos project:
-
-```bash
-curl -sS http://127.0.0.1:8765/health
-```
-
-If you use a custom port, replace `8765` with your configured port.
-
-## Project Structure
-
-```text
-browser.js          Cocos browser/editor extension entry and service lifecycle
-scene.js            Scene-side execution bridge and scene tool implementations
-panel/index.js      Minimal MCP Server panel UI
-lib/server.js       HTTP JSON-RPC MCP server
-lib/tool-registry.js Tool definitions and handlers
-lib/resources.js    MCP resources
-lib/prompts.js      MCP prompts
-lib/client-config.js One-click MCP client configuration
-lib/assets.js       Asset database helpers
-lib/diagnostics.js  TypeScript diagnostics
-lib/input.js        Electron input simulation
-lib/screenshots.js  Screenshot helpers
-```
-
-## Contribution Guidelines
-
-- Keep the `core` profile focused. Avoid adding noisy tools to `core` unless they are broadly useful for AI clients.
-- Prefer improving `execute_javascript` workflows when one flexible tool is better than many narrow tools.
-- Add tools to `full` when they are useful but not essential for the default AI workflow.
-- Keep the Cocos panel simple. The main panel should focus on service management and MCP client configuration.
-- Avoid adding runtime dependencies to built games; this extension should remain editor-only.
-- Keep changes small and focused.
-- Update `README.md`, `README_CN.md`, or `CHANGELOG.md` when behavior changes.
-- Do not commit generated Cocos folders such as `library/`, `temp/`, or build output.
-
-## Tool Design Notes
-
-When adding a new tool:
-
-1. Add the tool definition in `lib/tool-registry.js`.
-2. Use `profile: "core"` only for high-signal tools.
-3. Put scene/runtime work behind `sceneBridge.call(...)` when it must run in the active Cocos scene.
-4. Use editor-side helpers for asset-db, filesystem, and panel/client configuration workflows.
-5. Return JSON-serializable data where possible.
-6. Add clear input schema descriptions so AI clients can choose the tool correctly.
-7. Test the tool with `tools/list` and `tools/call`.
-
-## Documentation
-
-The documentation is bilingual:
-
-- `README.md` for English
-- `README_CN.md` for Chinese
-
-When adding user-facing behavior, update both files when possible.
-
-## Pull Requests
-
-A good pull request should include:
-
-- A clear summary of the change
-- What Cocos Creator version was tested
-- Whether the MCP server was tested through an AI client or direct HTTP calls
-- Any screenshots if the change affects the panel or visual scene output
-- Notes about compatibility or limitations
-
-## License
-
-By contributing, you agree that your contributions will be licensed under the MIT License used by this repository.
+Use `git diff -w` when reviewing changes. Source distributions must not replace this integration with upstream release downloads; retained upstream release manifests and scripts are historical references.

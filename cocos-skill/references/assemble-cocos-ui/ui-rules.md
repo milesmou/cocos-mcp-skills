@@ -12,6 +12,9 @@
 
 ## Geometry and adaptation
 
+- Preserve the established design resolution, Fit Width/Fit Height policy and authored spacing. Do not add SafeArea containers, adaptation scripts or extra insets without a requested adaptation change or an overlap established with the user. If adaptation is needed, separate full-bleed art from critical controls and apply the inset once.
+- Canvas adaptation and gameplay camera composition are separate checks. Widget alignment does not prove the world camera shows the intended area.
+
 - Set `UITransform.contentSize` and `anchorPoint` before configuring `Widget`.
 - Choose each node's anchor from its intended attachment point before converting screenshot coordinates to local coordinates; changing the anchor afterward requires recomputing position.
 - For every Label, set horizontal alignment, vertical alignment, overflow, and UITransform size before positioning it. Do not offset a node to compensate for an incorrect text-alignment mode.
@@ -19,6 +22,7 @@
 - Use project settings for design resolution and fit mode; do not encode a second design resolution in the Prefab.
 - Assemble directly on the project's configured design resolution. Full-screen roots use that size; dialogs and reusable controls keep their own sizes in that coordinate system. Uniformly scale the entire reference by min(designWidth / referenceWidth, designHeight / referenceHeight), center it with padding, and preserve all content without cropping or stretching. Use that same scale for positions, sizes, spacing, and text; do not create an expanded logical canvas. Check device adaptation separately using the existing project fit mode.
 - Configure child sizes before enabling `Layout`. Choose `NONE`, `CHILDREN`, or `CONTAINER` resize mode intentionally.
+- Keep ordinary layout scale at one. Choose Widget update timing from actual behavior, and avoid Widget/Layout/animation/manual writes competing for the same size or position. Verify grid cell policy, axes, padding, spacing and growth direction; batch repeated changes and keep nested layout chains shallow.
 - After bulk edits, call `Layout.updateLayout()` and `Widget.updateAlignment()` through `scene.execute-component-method` before measuring bounds.
 
 ## Masks and scrolling
@@ -28,6 +32,7 @@
 - Do not put Label, RichText, Sprite, or another renderer on a Mask node, except the Sprite required by `SPRITE_STENCIL`.
 - Always assign `ScrollView.content`. Prefer an explicit `ScrollView.view`, make content its descendant, and put the Mask on the view node.
 - Some established projects omit the serialized `view` and use the Mask-bearing `content.parent` as the effective viewport. Preserve that structure when it is already the project convention; require content to remain below that Mask and do not add a redundant viewport only to silence a warning.
+- Verify enabled axes, inertia, brake, bounce, child-button cancellation and nested scrolling. Pool large repeated lists; test the first/last items, overflow and resize in preview instead of relying only on dimensions.
 
 ## Interaction
 
@@ -35,8 +40,13 @@
 - Bind serialized EventHandlers last. Verify target node, registered component class, method name, and custom event data.
 - Before adding a serialized EventHandler, check whether the project's UI base class already routes clicks by button name or runtime listeners. Use one dispatch path for the same action.
 - Add `BlockInputEvents` to modal blockers when clicks must not pass through; its node needs a correctly sized `UITransform`.
+- Check `UIOpacity`, active state, Button interactability, focus, sibling order and hidden/masked states together. A transparent modal may still block input; a visible scrim may not block it.
+- Animate a Visual/Container child when Widget or Layout owns the root. Reconcile prior tweens and verify deterministic position, scale, opacity, active state and close/reopen behavior. Add a separate UI clock only when menus must animate while gameplay is paused.
+- Real pointer verification, stale screenshot handling and uncertain delivery follow [project readiness](../project-readiness.md). Emitting a click event alone proves only callback execution.
 
 ## Text decoration
+
+- For overflow, glyph coverage, caching or requested localization, read [text and localization](text-and-localization.md).
 
 - Look for a project font asset that matches the reference artwork. If none exists, use the system font by setting `Label.useSystemFont` to `true` and `Label.fontFamily` to `Arial`. This rule does not apply when the Label uses a font asset.
 - Use `Label.isUnderline` for underlined text. Do not draw a text underline with a Sprite, Graphics, or a separate line node.

@@ -59,10 +59,10 @@ function noticeClock(t) {
 
 test('only the dashboard retains Recent Activity; Output and the standalone log window stay removed', (t) => {
   fixture(t);
-  assert.deepEqual(Object.keys(manifest.panels).sort(), ['default', 'project-skills', 'settings', 'tool-exposure']);
+  assert.deepEqual(Object.keys(manifest.panels).sort(), ['default', 'preview', 'settings', 'tool-exposure']);
   assert.equal(manifest.contributions.messages['open-activity'], undefined);
   assert.equal(manifest.contributions.menu.some((entry) => entry.message === 'open-activity'), false);
-  for (const mode of ['dashboard', 'tool-exposure', 'settings', 'project-skills']) {
+  for (const mode of ['dashboard', 'tool-exposure', 'settings']) {
     const { template, style } = createPanel(mode);
     assert.doesNotMatch(template, /id="(?:output|recentLogs|openActivityBtn)"|common\.output/);
     if (mode === 'dashboard') {
@@ -224,30 +224,4 @@ test('removing Output does not swallow failed configuration saves', async (t) =>
   assert.match(panel.$.panelNoticeText.textContent, /保存配置失败/);
   assert.equal(panel.$.panelNotice.hidden, false);
   assert.equal(panel.$.panelNotice.getAttribute('role'), 'alert');
-});
-
-test('Skill cards show only available actions and keep file/backup details collapsed', (t) => {
-  const { panel } = fixture(t, 'project-skills');
-  const previousDocument = global.document;
-  global.document = { createElement: element, createDocumentFragment: element };
-  t.after(() => { global.document = previousDocument; });
-  panel.$.builtInSkillList = element();
-  panel.selectedSkillClientId = () => 'codex';
-  for (const [status, backupCount, expected] of [
-    ['current', 0, ['reveal']], ['missing', 0, ['install', 'preview']],
-    ['modified', 1, ['install', 'preview', 'restore', 'reveal']],
-  ]) {
-    panel.$.builtInSkillList.children = [];
-    panel.selectedProjectSkills = () => ({ supported: true, builtIns: [
-      { skillName: 'workflow', status, installed: status !== 'missing', backupCount },
-    ] });
-    panel.renderProjectSkills();
-    const card = panel.$.builtInSkillList.children[0].children[0];
-    const toolbar = card.children.find((child) => child.className === 'toolbar');
-    assert.deepEqual(toolbar.children.map((child) => child.dataset.skillAction), expected);
-    const fileDetails = card.children.find((child) => child.className === 'skill-file-details');
-    assert.ok(fileDetails);
-    assert.notEqual(fileDetails.open, true);
-    assert.equal(card.children.some((child) => child.className === 'skill-diff-details'), false);
-  }
 });

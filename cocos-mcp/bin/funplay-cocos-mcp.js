@@ -377,6 +377,8 @@ function printHelp() {
   console.error('  FUNPLAY_COCOS_MCP_TIMEOUT_SECONDS');
 }
 
+module.exports = { readMessage, writeMessage, postJsonRpc };
+
 if (require.main === module) {
   main().then((code) => {
     process.exitCode = code;

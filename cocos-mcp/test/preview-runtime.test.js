@@ -239,8 +239,8 @@ test('legacy scene pause/resume entrypoints forward to preview tools and never p
   assert.equal((await scene.exports.methods.pauseRuntime()).paused, true);
   assert.equal((await scene.exports.methods.resumeRuntime()).paused, false);
   assert.deepEqual(requests, [
-    ['funplay-cocos-mcp', 'call-tool', 'pause_runtime'],
-    ['funplay-cocos-mcp', 'call-tool', 'resume_runtime'],
+    ['cocos-mcp-bridge', 'call-tool', 'pause_runtime'],
+    ['cocos-mcp-bridge', 'call-tool', 'resume_runtime'],
   ]);
   reject = true;
   await assert.rejects(scene.exports.methods.pauseRuntime(), /Preview unavailable/);

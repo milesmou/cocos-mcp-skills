@@ -4,13 +4,13 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
-const packageJSON = require('./package.json');
+const packageJSON = require('../../package.json');
 
 const HOST = '127.0.0.1';
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 /** 运行时截图以 Base64 JSON 回传时允许的最大请求体，单位字节。 */
 const MAX_RUNTIME_BODY_BYTES = 32 * 1024 * 1024;
-const CONNECTION_FILE = 'cocos3-codex-bridge.json';
+const CONNECTION_FILE = 'cocos-mcp-bridge.json';
 const PREVIEW_PANEL = `${packageJSON.name}.preview`;
 /** 等待普通 Web 预览返回一次节点快照的最长时间，单位毫秒。 */
 const RUNTIME_REQUEST_TIMEOUT_MS = 5000;
@@ -42,7 +42,7 @@ const ALLOWED_MESSAGES = {
 let server = null;
 let token = '';
 let connectionPath = '';
-/** 接收普通 Web 预览连接的本机只读中继服务。 */
+/** 接收普通 Web 预览连接的本机中继服务；执行请求由认证桥接入口发起。 */
 let runtimeServer = null;
 /** 中继当前监听端口；0 表示不可用。 */
 let runtimePort = 0;
@@ -241,6 +241,10 @@ async function handleRuntimeRequest(request, response) {
       return;
     }
     const payload = JSON.parse(await readTextBody(request, MAX_RUNTIME_BODY_BYTES) || '{}');
+    if (payload?.instanceId !== instanceId) {
+      writeRuntimeJson(response, 400, { ok: false, error: 'runtime result instance does not match' });
+      return;
+    }
     pending.expected.delete(instanceId);
     pending.results.push(payload);
     writeRuntimeJson(response, 200, { ok: true });
@@ -352,6 +356,46 @@ async function exportRuntimeScreenshot(options = {}) {
   };
 }
 
+/** 在指定的真实游戏预览实例执行一次 JavaScript，不重试或广播有副作用的请求。 */
+async function executeRuntimeJavascript(options = {}) {
+  if (typeof options.code !== 'string' || !options.code.trim() || options.code.length > 65536) throw new Error('runtime code must contain 1 to 65536 characters');
+  /** 本次等待响应的期限，不代表能中断浏览器代码。 */
+  const timeoutMs = options.timeoutMs ?? 5000;
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 100 || timeoutMs > 30000) throw new Error('runtime timeoutMs must be an integer from 100 to 30000');
+  /** 当前仍连接的普通 Web 预览实例。 */
+  const clients = [...runtimeClients.entries()].filter(([, response]) => !response.writableEnded);
+  if (clients.length === 0) throw new Error('no runtime inspector is connected; open or refresh the normal Creator Web preview');
+  /** 多实例必须显式选择，禁止广播有副作用的代码。 */
+  const selected = options.instanceId === undefined ? (clients.length === 1 ? clients[0] : null) : clients.find(([id]) => id === options.instanceId);
+  if (!selected) throw new Error(`select a connected runtime instanceId; available: ${clients.map(([id]) => id).join(', ')}`);
+  /** 用随机请求标识将结果与唯一一次发送关联。 */
+  const requestId = crypto.randomBytes(16).toString('hex');
+  /** 等待所选预览返回的数据封包。 */
+  const result = await new Promise((resolve, reject) => {
+    /** 本次请求的实例、结果、完成回调和超时状态。 */
+    const pending = {
+      expected: new Set([selected[0]]), results: [], resolve, reject,
+      timer: setTimeout(() => {
+        runtimeRequests.delete(requestId);
+        reject(new Error(`runtime JavaScript timed out after ${timeoutMs} ms; execution may still be running; do not replay automatically`));
+      }, timeoutMs)
+    };
+    runtimeRequests.set(requestId, pending);
+    try {
+      selected[1].write(`data: ${JSON.stringify({ requestId, type: 'runtime-javascript', options: { code: options.code, args: options.args || {} } })}\n\n`);
+    } catch {
+      clearTimeout(pending.timer);
+      runtimeRequests.delete(requestId);
+      runtimeClients.delete(selected[0]);
+      reject(new Error('runtime connection closed before dispatch; execution was not retried'));
+    }
+  });
+  /** 唯一目标实例返回的执行结果或错误。 */
+  const snapshot = result.snapshots[0];
+  if (snapshot?.error) throw new Error(`runtime JavaScript failed: ${snapshot.error}`);
+  return snapshot;
+}
+
 async function dispatch(payload) {
   const args = Array.isArray(payload.args) ? payload.args : [];
   if (payload.target === 'bridge') {
@@ -368,20 +412,23 @@ async function dispatch(payload) {
         runtimeInspector: {
           port: runtimePort || null,
           connectedInstances: runtimeClients.size,
-          screenshotPng: true
+          instanceIds: [...runtimeClients.keys()],
+          screenshotPng: true,
+          javascript: true
         }
       };
     }
     if (payload.method === 'export-prefab-preview') return exportPrefabPreview(args[0]);
     if (payload.method === 'runtime-node-stats') return requestRuntimeNodeStats(args[0]);
     if (payload.method === 'export-runtime-screenshot') return exportRuntimeScreenshot(args[0]);
+    if (payload.method === 'execute-runtime-javascript') return executeRuntimeJavascript(args[0]);
     throw new Error(`unsupported bridge method: ${payload.method}`);
   }
   if (payload.target === 'scene-script') {
     if (typeof payload.method !== 'string' || !payload.method) throw new Error('scene-script method is required');
     return Editor.Message.request('scene', 'execute-scene-script', {
       name: packageJSON.name,
-      method: payload.method,
+      method: `bridge${payload.method[0].toUpperCase()}${payload.method.slice(1)}`,
       args
     });
   }

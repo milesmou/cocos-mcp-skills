@@ -73,3 +73,5 @@ Use `db://assets/...` URLs for destinations and queries whenever possible.
 - `saveAnimation()`
 
 Prefer public Scene messages for mutations because they integrate with Creator's undo system. Use scene-script mutation helpers only when the public dump/message interface cannot express the operation.
+
+统一插件中 Scene Script 的辅助方法使用 `bridge` 前缀（首字母大写），例如 `bridgeInspectTree`、`bridgeCreateNode`、`bridgeAddComponent`。兼容 CLI 的 `request scene-script inspectTree` 仍使用原名称，认证入口负责映射，避免与 MCP 原有方法重名。

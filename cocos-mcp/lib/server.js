@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const http = require('http');
 const { safeStringify } = require('./utils');
 const IMAGE_DATA_URI_PREFIX = 'data:image/png;base64,';
-const LOG_PREFIX = '[Funplay Cocos MCP Server]';
+const LOG_PREFIX = '[Cocos MCP Server]';
 const MAX_PORT_FALLBACK_ATTEMPTS = 20;
 const MAX_REQUEST_BODY_BYTES = 4 * 1024 * 1024;
 const MCP_PROTOCOL_VERSION = '2025-11-25';
@@ -418,7 +418,7 @@ class McpServer {
       params: {
         protocolVersion: MCP_PROTOCOL_VERSION,
         clientInfo: {
-          name: 'funplay-cocos-mcp-probe',
+          name: 'cocos-mcp-bridge-probe',
           version: this.serverVersion,
         },
       },
@@ -689,7 +689,7 @@ class McpServer {
           version: this.serverVersion,
         },
         funplay: {
-          server: 'funplay-cocos-mcp',
+          server: 'cocos-mcp-bridge',
           projectName: this.projectName,
           projectIdentity: this.projectIdentity,
         },

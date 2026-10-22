@@ -4,14 +4,14 @@ Use this workflow to inspect the node-count state of the same normal Cocos Creat
 
 ## One-time setup
 
-1. Keep the target Creator 3.8 project open and enable `cocos3-codex-bridge`.
+1. Keep the target Creator 3.8 project open and enable `cocos-mcp-bridge`.
 2. Install the preview hook:
 
    ```powershell
    node "<MCP目录>/compat/creator-bridge/scripts/install-runtime-inspector.mjs" --project "<project>"
    ```
 
-   The installer preserves an existing `preview-template/index.ejs`, adds one marked script tag, and copies `runtime-node-inspector.js`. If the project has no preview template, it copies the matching Creator 3.8 built-in template first. Never hand-edit the editor's built-in template or engine source.
+   The default project connection installs this template with the bridges. The standalone installer also works while Creator is closed. It preserves custom `index.ejs`, adds the runtime script tags, and installs the canonical Creator 3.8 template when absent. Managed script upgrades are backed up; unknown local changes are rejected. Never edit the editor's built-in template or engine source.
 3. Refresh or restart the developer's normal Browser/Editor Web preview. Do not launch a dedicated debugging browser.
 4. Run `status` and require `runtimeInspector.connectedInstances` to be at least 1.
 
@@ -47,4 +47,4 @@ If `timedOut` is true, report the returned snapshots and list `missingInstances`
 - If no instance is connected, refresh the already-open preview after installing the hook. Do not start a second preview merely to obtain a result.
 - If the relay port is occupied, change the project's preview server port or stop the conflicting local process, then refresh Creator and the preview.
 - The hook is confined to `preview-template`, so it is not included in release build templates.
-- Queries are read-only. Do not add runtime mutation or arbitrary code evaluation endpoints to this relay.
+- Node-stat queries are read-only. Intentional game JavaScript execution uses the separate authenticated dispatch documented in [runtime JavaScript](runtime-javascript.md); the preview relay has no direct execution HTTP endpoint.

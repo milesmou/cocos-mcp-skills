@@ -35,7 +35,7 @@ const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
 async function callPreviewRuntimeTool(name) {
   // Keep legacy scene-script entrypoints, but route them back to the editor's
   // Game View controller rather than pausing this edit-scene director.
-  const output = await Editor.Message.request('funplay-cocos-mcp', 'call-tool', name, {});
+  const output = await Editor.Message.request('cocos-mcp-bridge', 'call-tool', name, {});
   const result = typeof output === 'string' ? JSON.parse(output) : output;
   if (!result || result.ok !== true) {
     throw new Error((result && result.summary) || `Preview tool '${name}' failed.`);
@@ -1609,3 +1609,12 @@ exports.methods = {
       : execute(console);
   },
 };
+
+/** Keep helper signatures isolated from the MCP scene methods. */
+const creatorBridgeMethods = require('./lib/creator-bridge/scene')(cc, typeof cce === 'undefined' ? null : cce);
+for (const [method, handler] of Object.entries(creatorBridgeMethods)) {
+  /** Namespaced IPC method preserves helper positional arguments. */
+  const alias = `bridge${method[0].toUpperCase()}${method.slice(1)}`;
+  if (exports.methods[alias]) throw new Error(`Duplicate scene method: ${alias}`);
+  exports.methods[alias] = handler;
+}

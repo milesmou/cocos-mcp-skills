@@ -2,21 +2,20 @@
 
 module.exports = {
   language_code: 'zh',
-  title: 'Funplay Cocos MCP',
+  title: 'Cocos MCP',
   panel_server: 'MCP 服务',
   panel_tool_exposure: '工具开放范围',
   panel_settings: 'MCP 设置',
-  panel_project_skills: '项目 Skills',
+
   menu_server: 'MCP 服务',
   menu_tool_exposure: '工具开放范围',
   menu_settings: 'MCP 设置',
-  menu_project_skills: '项目 Skills',
 
   'common.dismiss': '关闭',
   'common.action_completed': '操作已完成。',
   'common.action_failed': '操作未完成。',
   'common.copy_failed': '复制失败，请检查剪贴板权限后重试。',
-  'skills_manager.file_details': '位置与备份',
+
   'common.unknown': '未知',
   'common.clear': '清除',
   'common.yes': '是',
@@ -50,15 +49,14 @@ module.exports = {
   'dashboard.fixed_port_hint': '当前使用固定端口，可切换为项目独立端口。',
   'dashboard.client_setup': '一键配置 MCP',
   'dashboard.configure_short': '配置',
-  'dashboard.configure_skills': '配置 + Skills',
+
   'client.status': '状态',
-  'client.skills_setup_hint': '“配置 + Skills”会安装缺失的内置 Skill，已有内容保留。',
+
   'client.configuring': '正在配置…',
   'client.configure_complete': '客户端配置已保存，重新连接客户端即可使用。',
-  'client.setup_complete': '配置已保存，安装了 {count} 个 Skill。请重新连接客户端以加载变更。',
-  'client.setup_review': '配置已保存，安装了 {count} 个 Skill。需要检查的已有 Skill 保持不变，可到“项目 Skills”更新。',
+
   'client.configure_failed': '配置失败：{error}',
-  'client.setup_partial': '客户端配置已保存，但 Skills 安装未完成：{error}',
+
   'settings.updates': '扩展更新',
   'settings.console_logs': '控制台日志',
   'settings.print_mcp_logs': '打印 MCP 日志',
@@ -106,7 +104,7 @@ module.exports = {
   'activity.field_port': '端口',
   'activity.field_path': '路径',
   'activity.field_url': '地址',
-  'dashboard.project_skills': '项目 Skills',
+
   'dashboard.mcp_client': 'MCP 客户端',
   'dashboard.configure_client': '一键配置',
   'dashboard.preview_config': '预览所选配置',
@@ -121,7 +119,7 @@ module.exports = {
   'updates.incomplete': '发布资源不完整，请手动安装。',
   'updates.auto_check_failed': '自动检查更新失败：{error}',
   'updates.none_installable': '当前没有可安装的更新。',
-  'updates.confirm_title': '现在安装 Funplay Cocos MCP {version} 吗？',
+  'updates.confirm_title': '现在安装 Cocos MCP {version} 吗？',
   'updates.confirm_body': '更新程序将校验 SHA256SUMS.txt、备份当前扩展、替换插件文件，并在 Cocos 支持时重新加载扩展。',
 
   'tools.title': '工具开放范围',
@@ -195,7 +193,7 @@ module.exports = {
   'installation.duplicate': '当前项目仍有一份扩展：{path}，在本项目保持打开时它可能优先。请先在干净项目中确认全局副本，再移除或禁用项目副本。',
   'installation.restart_required': '请重新打开当前项目或重启 Cocos Creator，以启用全局副本。',
   'installation.already_available': '扩展已经对使用当前 Creator 版本打开的项目可用。',
-  'installation.confirm_title': '为使用当前 Creator 版本的所有项目安装 Funplay Cocos MCP 吗？',
+  'installation.confirm_title': '为使用当前 Creator 版本的所有项目安装 Cocos MCP 吗？',
   'installation.confirm_body': '将下载最新 Release，使用 SHA256SUMS.txt 校验后安装到 {path}，并让 Cocos Creator 扫描和注册它。当前项目副本会继续运行；重新打开项目后切换到全局副本。',
 
   'client.no_targets': '没有可用的客户端目标。',
@@ -207,60 +205,40 @@ module.exports = {
   'client.tools_copied': '工具列表 curl 命令已复制。',
 
 
-  'skills_manager.title': '项目 Skills',
-  'skills_manager.hint': '按所选客户端管理项目 Skills，并避免静默覆盖本地修改。',
-  'skills_manager.unsupported': '暂不支持为此客户端自动安装 Skills，请在上方选择已支持的客户端。',
-  'skills_manager.read_error': '无法读取此客户端的 Skills：{error}',
-  'skills_manager.legacy_path': '旧路径：{path}。更新时会备份并安装到新目录，原文件将保留。',
-  'skills_manager.recommended': 'Funplay 内置 Skills',
-  'skills_manager.installed': '已安装的项目 Skills',
-  'skills_manager.install': '安装 Skill',
-  'skills_manager.update': '备份并更新',
-  'skills_manager.current_action': '已是最新版',
-  'skills_manager.view_changes': '查看差异',
-  'skills_manager.restore_backup': '恢复最新备份',
-  'skills_manager.reveal': '在文件夹中显示',
-  'skills_manager.diff_preview': '差异预览',
-  'skills_manager.status_missing': '未安装',
-  'skills_manager.status_current': '已是最新版',
-  'skills_manager.status_update_available': '有可用更新',
-  'skills_manager.status_modified': '存在本地修改',
-  'skills_manager.detail_missing': '安装内置模板 v{latest}，让 AI 客户端可以使用这套项目指引。',
-  'skills_manager.detail_current': '内置模板 v{latest} 已安装，且没有检测到本地修改。',
-  'skills_manager.detail_update_available': '模板可从 v{installed} 更新到 v{latest}，更新前会先备份现有文件。',
-  'skills_manager.detail_modified': '检测到本地修改。用模板 v{latest} 替换前请先查看差异。',
-  'skills_manager.path': 'Skill 路径：{path}',
-  'skills_manager.latest_backup': '共 {count} 个备份，最新：{path}',
-  'skills_manager.no_backup': '暂无备份。',
-  'skills_manager.no_built_in_skills': '当前没有可用的内置项目 Skill。',
-  'skills_manager.no_skills': '当前项目尚未安装 Skill。',
-  'skills_manager.official_badge': '内置',
-  'skills_manager.invalid_format': '旧格式或 SKILL.md frontmatter 无效',
-  'skills_manager.notice_missing': '尚未安装推荐的项目 Skill，请打开“项目 Skills”进行安装。',
-  'skills_manager.notice_update': '项目 Skill 有可用更新（v{installed} -> v{latest}），请打开“项目 Skills”查看。',
-  'skills_manager.notice_modified': '推荐项目 Skill 存在本地修改，请打开“项目 Skills”比较差异或备份后更新。',
-  'skills_manager.notice_summary': '{total} 个内置项目 Skill 中有 {count} 个需要安装、检查或更新，请打开“项目 Skills”进行管理。',
-  'skills_manager.notice_missing_list': '未安装（{count}）：{names}',
-  'skills_manager.notice_update_list': '有可用更新（{count}）：{names}',
-  'skills_manager.notice_modified_list': '存在本地修改（{count}）：{names}',
-  'skills_manager.manage': '管理 Skills',
-  'skills_manager.diff_summary': '差异已生成：新增 {added} 行，删除 {removed} 行。',
-  'skills_manager.already_current': '这个内置项目 Skill 已是最新版。',
-  'skills_manager.confirm_update_title': '更新这个内置项目 Skill？',
-  'skills_manager.confirm_update_body': '更新前会备份 {path}，然后用最新版模板替换。',
-  'skills_manager.confirm_modified_title': '替换这个存在本地修改的项目 Skill？',
-  'skills_manager.confirm_modified_body': '将先备份 {path} 的本地修改，再用最新版官方模板替换。如有需要，请先查看差异。',
-  'skills_manager.confirm_restore_title': '恢复最新的项目 Skill 备份？',
-  'skills_manager.confirm_restore_body': '将恢复 {path}，当前 Skill 也会先备份。',
-  'skills_manager.create_custom': '创建自定义 Skill',
-  'skills_manager.skill_name': 'Skill 名称',
-  'skills_manager.skill_name_placeholder': 'scene-qa',
-  'skills_manager.skill_title': '标题',
-  'skills_manager.skill_title_placeholder': '场景质量检查',
-  'skills_manager.skill_description': '触发说明',
-  'skills_manager.skill_instructions': '操作指令',
-  'skills_manager.create': '创建 Skill',
-  'skills_manager.skill_name_required': '必须填写 Skill 名称。',
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   'errors.refresh_failed': '刷新失败：{error}',
 };

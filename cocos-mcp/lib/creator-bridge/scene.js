@@ -1,7 +1,7 @@
 'use strict';
 
-const { join } = require('node:path');
-module.paths.push(join(Editor.App.path, 'node_modules'));
+/** Reuse engine/editor objects supplied by the single scene entrypoint. */
+module.exports = function createBridgeSceneMethods(cc, cce) {
 
 const {
   Color,
@@ -16,7 +16,7 @@ const {
   assetManager,
   director,
   js
-} = require('cc');
+} = cc;
 
 const RESERVED_PROPERTIES = new Set([
   '_id', '_objFlags', '__type__', '__prefab', 'node', 'uuid', 'parent', 'children'
@@ -369,7 +369,7 @@ function collectIssues(root) {
   return issues;
 }
 
-exports.methods = {
+return {
   inspectTree(options = {}) {
     const root = options.root ? findNode(options.root) : activeScene();
     return summarizeNode(root, 0, Number.isInteger(options.maxDepth) ? options.maxDepth : 32, options.components !== false);
@@ -522,5 +522,4 @@ exports.methods = {
   }
 };
 
-exports.load = function load() {};
-exports.unload = function unload() {};
+};

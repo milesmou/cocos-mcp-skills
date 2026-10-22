@@ -1,14 +1,17 @@
 # 默认 MCP 工作流
 
-本说明统一维护 Funplay MCP 的执行上下文、Editor 消息及可选桥接调用。服务源代码位于 `cocos-mcp/`，内部扩展标识仍为 `funplay-cocos-mcp`；MCP 连接名称由目标工程配置决定，不硬编码客户端工具前缀。
+本说明统一维护 Funplay MCP 的执行上下文、Editor 消息及桥接辅助能力调用。默认 Codex 侧服务名称为 `cocos-mcp`，使用 `bin/cocos-mcp.js`；工程内唯一扩展标识为 `cocos-mcp-bridge`。客户端工具前缀取决于实际注册名称，不在工作流中写死。
 
 ## 建立工程上下文
 
-1. 通过已连接 MCP 的 `get_project_info`、`get_editor_state` 确认工程路径、Creator 版本、当前场景与连接状态。路径与用户目标不一致时先定位正确连接，不操作另一个工程。
-2. 使用 `get_tool_catalog` 和客户端实际暴露的 schema 确认工具与参数。默认 `core` 提供聚焦的工具集，`full` 包含更多修改工具；不要假定所有工具都已暴露，也不要绕过禁用设置。
-3. 通过 `get_hierarchy`、`get_scene_info`、`inspect_prefab`、`inspect_asset` 等读取当前事实。修改前记录目标 UUID、属性和需要恢复的上下文。
+1. 先调用 `connect_cocos_project` 并传入工程绝对路径，服务检查并安装缺失桥接。返回 `restart_required` 时提示用户保存并重启 Creator，等待完成后按原参数再次连接；只有 `connected: true` 才继续。安装与连接状态见 [CODEX_SETUP.md](CODEX_SETUP.md)。
+2. 通过已连接 MCP 的 `get_project_info`、`get_editor_state` 确认工程路径、Creator 版本、当前场景与连接状态。路径与用户目标不一致时先定位正确连接，不操作另一个工程。
+3. 使用 `get_tool_catalog` 和客户端实际暴露的 schema 确认工具与参数。默认 `core` 提供聚焦的工具集，`full` 包含更多修改工具；不要假定所有工具都已暴露，也不要绕过禁用设置。
+4. 通过 `get_hierarchy`、`get_scene_info`、`inspect_prefab`、`inspect_asset` 等读取当前事实。修改前记录目标 UUID、属性和需要恢复的上下文。
 
 ## 编辑器消息与原 CLI 的对应关系
+
+`execute_javascript` 的 `scene` 是编辑器场景进程，`editor` 是 Editor 主进程；读取普通 Web 预览中实际运行的游戏数据时使用 `runtime`。运行时要求预览模板和辅助桥接，连接及示例见 [运行时数据查询](creator-bridge/runtime-javascript.md)。
 
 原桥接命令与 MCP 的对应关系如下；技能只负责组合工作流，不再提供逐项操作模块：
 
@@ -16,7 +19,7 @@
 | --- | --- |
 | `request scene <method> <args-array>` | `execute_javascript`，`context: "editor"`，调用 `Editor.Message.request('scene', method, ...args)` |
 | `request asset-db <method> <args-array>` | `execute_javascript`，`context: "editor"`，调用 `Editor.Message.request('asset-db', method, ...args)` |
-| `request scene-script <method> <args-array>` | 原桥接专属辅助方法；安装可选桥接后，通过它的 CLI，或调用下面的 `execute-scene-script`；不能把辅助方法名直接传给 Funplay 的 `execute_scene_script` |
+| `request scene-script <method> <args-array>` | 原桥接专属辅助方法；统一插件加载后，通过它的 CLI，或调用下面的 `execute-scene-script`；不能把辅助方法名直接传给 Funplay 的 `execute_scene_script` |
 
 `execute_javascript` 的参数为 `context`、`code` 和可选的 `args` 对象。`code` 可以直接 `return` 一个结果，或定义 `run(env)`。编辑器上下文提供 `Editor`、`args`、`context`、`helpers`、`fs`、`path`、`os`、`require` 和 `console`。
 
@@ -75,7 +78,7 @@
 
 `context: "scene"` 的脚本针对编辑器当前场景上下文。真实游戏预览的截图与状态使用预览工具；不能通过编辑场景里的 `director` 结果证明 Web 预览已生效。
 
-## 可选桥接辅助方法
+## 桥接辅助能力辅助方法
 
 只有细粒度 dump/动画管理、内部 Prefab 预览或原运行时中继等能力确实需要时，才加载 [认证桥接安装与调用](creator-bridge/README.md)。桥接有独立的连接文件和令牌，不能将它的端口当作 MCP URL。
 
@@ -85,7 +88,7 @@
 {
   "context": "editor",
   "args": { "maxDepth": 6 },
-  "code": "return await Editor.Message.request('scene', 'execute-scene-script', { name: 'cocos3-codex-bridge', method: 'inspectTree', args: [args] });"
+  "code": "return await Editor.Message.request('scene', 'execute-scene-script', { name: 'cocos-mcp-bridge', method: 'bridgeInspectTree', args: [args] });"
 }
 ```
 

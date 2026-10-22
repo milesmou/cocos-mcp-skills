@@ -9,49 +9,11 @@
 - Claude Code 使用 `~/.claude.json` 的 `projects[Git 仓库根目录].mcpServers`，不是所有项目共享的顶层条目。没有 Git 仓库时使用 Cocos 项目目录。这里的 Claude Code 配置不是 Claude Desktop 配置。
 - CodeBuddy 使用 IDE 4.0 起支持的 `<Cocos 项目>/.mcp.json`，不写 CLI 或旧编辑器插件的全局配置。请在 CodeBuddy 中打开该 Cocos 项目目录，并按客户端提示启用或批准服务器；不会自动放宽 MCP 审批设置。
 
-## Client-specific managed Skills
+## Unified Cocos skill
 
-Open **Funplay > Project Skills**, choose a client, then install either built-in Skill. The MCP Server dashboard checks the selected client's managed directory. Unsupported clients do not show an install/update notice.
+The two built-in Funplay skill templates have been merged into [cocos-skill](../../cocos-skill/SKILL.md). Install the unified skill through the repository Codex installer. The editor no longer has a Project Skills panel, managed-template installation/update/backup actions, or Configure + Skills setup. Existing user-authored skills and instruction files are retained. The generic create_project_skill tool remains available only for explicitly authored custom project guidance.
 
-The dashboard's **Configure + Skills** action configures the selected MCP client and installs any missing built-in Skills. Existing Skills are kept, including old versions, legacy-path installs and local edits; use Project Skills to review, back up and update them. If configuration succeeds but a Skill cannot be installed, the dashboard reports partial completion instead of claiming the whole setup succeeded.
-
-All management pages share aligned controls, lightweight sections, and responsive layouts. Extension update and global-install controls are in **Settings**. Project Skills hides unavailable actions and collapses file/backup details. Recent Activity preserves each result's field order, nested objects, array items, and scalar values instead of flattening six selected fields. Branches and JSON disclosures retain their expanded state across refreshes. Preview limits are 200 nodes, 6 nested levels, 24 keys per object, 12 items per array, 800 characters per string, and approximately 16,000 total characters; truncation is marked and sensitive fields/file bodies are omitted. Clear removes only MCP interaction history without clearing runtime logs. Output sections and the standalone Activity/log-viewing window are removed. Successful actions show a short, auto-dismissed notice; failures remain visible until dismissed. Diagnostic logs and MCP interaction summaries remain available through the existing MCP tools/resources.
-
-Script cards separate the execution summary, scoped console logs, and return value. `execute_javascript` and both compatibility aliases inject a per-invocation `console` with `log/info/warn/error/debug` capture; `run(env)` and module-export functions also receive `env.console`. Logs before a thrown error survive scene IPC. Capture stops when the script settles and never patches the global console, so concurrent/nested calls, unrelated project logs, separately required modules, and later background callbacks cannot contaminate another call. Console forwarding is unchanged. Capture retains up to 50 entries, 1,000 characters per message, and about 20,000 characters per call, with redaction and an explicit `logsOmitted` count. Protocol responses keep their existing `data` and add optional `execution: { context, durationMs, logs, logsOmitted }` metadata, also on script error envelopes.
-
-**Settings > Console Logs > Print MCP logs** controls only the extension and HTTP server's Cocos console printing, including warnings and errors. It defaults on and is saved as `enableConsoleLogging` in the project config. Changes apply immediately without restarting MCP, disconnecting clients, clearing Recent Activity/internal diagnostics, or muting project-script logs. A saved off setting also suppresses startup printing.
-
-| Client | Managed project directory |
-| --- | --- |
-| Codex | `.agents/skills` |
-| Claude Code | `.claude/skills` |
-| Cursor | `.cursor/skills` |
-| Qoder | `.qoder/skills` |
-| Kimi Code | `<nearest Git root>/.kimi-code/skills` (project directory when no Git root exists) |
-| OpenCode | `.opencode/skills` |
-| CodeBuddy | `.codebuddy/skills` |
-
-The manager checks these **managed project directories**, not every user-level or cross-client compatibility directory an agent may also discover. It does not change global Skills, agent rules, or user-authored `AGENTS.md` / `CLAUDE.md` files. Open the AI client at the relevant project/Git root so it can discover the files.
-
-Client paths were checked against the official [Codex](https://learn.chatgpt.com/docs/build-skills#where-codex-loads-local-skills), [Claude Code](https://code.claude.com/docs/en/skills#where-skills-live), [Cursor](https://cursor.com/docs/skills), [Qoder](https://docs.qoder.com/cli/Skills), [Kimi Code](https://www.kimi.com/code/docs/en/kimi-code-cli/customization/skills.html#skill-locations), [OpenCode](https://opencode.ai/docs/skills), and [CodeBuddy](https://www.codebuddy.cn/docs/ide/Features/Skills) documentation. CodeBuddy's project MCP location follows its [official IDE release notes](https://intl.cloud.tencent.com/zh/document/product/1256/77264).
-
-### Legacy Codex installs
-
-The manager detects the two built-in Skills in `.codex/skills` when their new `.agents/skills` destination is absent. Updating backs up the old content and installs the current template in the new directory. The original file is retained. Modified content requires explicit confirmation; an existing new-directory file always takes precedence. Older `.codex/skill-backups` remain available to restore. Custom legacy Skills are not automatically moved: review and migrate them manually.
-
-New backups are stored alongside each client's Skills directory, under `skill-backups/<skill-name>/`. Updating one client's managed copy does not overwrite another client's managed copy.
-
-### Built-in v3 references
-
-Both built-ins now route from a concise `SKILL.md` to conditional references, instead of loading all specialist guidance on every task:
-
-- `funplay-cocos-mcp-workflow/references/project-readiness.md`: exact asset identity, separate import/compile/preview checks, and persistence.
-- `funplay-cocos-ui-composition/references/layout-and-adaptation.md`: design baselines, layout ownership, scrolling, and explicitly requested safe-area changes.
-- `references/sprites-and-importers.md`, `references/text-and-localization.md`, and `references/input-and-validation.md` in the UI Skill: nine-slice/importers, font/localization checks, and real input/visual validation respectively.
-
-The UI guidance preserves existing project composition and does not proactively introduce SafeArea containers, adaptation scripts, extra margins, or duplicate insets. New adaptation requires an explicit request or a demonstrated overlap confirmed with the user.
-
-Managed metadata tracks hashes for `SKILL.md` and each known reference. A missing/older reference prompts an update even when the entrypoint is current. Modified managed files require a confirmed backup update; an unowned conflicting reference is never overwritten, even with confirmation. Unrelated files are retained. Backups keep their existing `.md` entrypoint and add a `.md.files.json` companion for references and metadata; keep both files together for bundle restore. Legacy backups without a companion restore only the entrypoint. Each file write checks its read snapshot, but the bundle is not a cross-file filesystem transaction; a failed write must be reviewed before retrying.
+Recent Activity still preserves nested result cards and separate script execution logs. Settings, tool exposure and client connection configuration continue to work independently of skills.
 
 ## Asset Database readiness
 
@@ -131,7 +93,7 @@ Use the exact server name and URL in the MCP Server panel. Documentation example
 
 Generated JSON preserves unrelated settings and entries. JSONC or malformed/non-object configuration is left untouched with an error. TOML updates preserve unrelated sections and options; ambiguous forms such as inline MCP tables or multiline strings currently require manual configuration. Configuration writes preserve file permissions and reject a changed read snapshot before atomic replacement.
 
-To pin a port explicitly in `funplay-cocos-mcp.config.json`:
+To pin a port explicitly in `cocos-mcp-bridge.config.json`:
 
 ```json
 {

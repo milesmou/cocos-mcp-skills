@@ -91,12 +91,12 @@ test('core profile exposes the documented focused tool set', () => {
 
 test('full profile exposes all built-in tools', () => {
   const tools = createRegistry('full').listTools();
-  assert.equal(tools.length, 106);
+  assert.equal(tools.length, 105);
   assert.equal(tools.some((tool) => tool.name === 'write_file'), true);
   assert.equal(tools.some((tool) => tool.name === 'edit_prefab_json'), true);
   assert.equal(tools.some((tool) => tool.name === 'create_prefab_from_node'), true);
   assert.equal(tools.some((tool) => tool.name === 'create_project_skill'), true);
-  assert.equal(tools.some((tool) => tool.name === 'create_cocos_mcp_project_skill'), true);
+  assert.equal(tools.some((tool) => tool.name === 'create_cocos_mcp_project_skill'), false);
   assert.equal(tools.some((tool) => tool.name === 'bind_button_click_event'), true);
   assert.equal(tools.some((tool) => tool.name === 'open_build_panel'), true);
   assert.equal(tools.some((tool) => tool.name === 'get_preview_mode'), true);
@@ -107,39 +107,22 @@ test('full profile exposes all built-in tools', () => {
   assert.equal(tools.some((tool) => tool.name === 'set_selection'), true);
 });
 
-test('recommended project skill tool records managed template metadata', async (t) => {
-  const projectPath = fs.mkdtempSync(path.join(os.tmpdir(), 'funplay-cocos-managed-skill-'));
-  t.after(() => fs.rmSync(projectPath, { recursive: true, force: true }));
-  const registry = createRegistry('full', projectPath);
 
-  const result = await registry.callToolDetailed('create_cocos_mcp_project_skill', {});
-
-  assert.equal(result.value.data.path, '.agents/skills/funplay-cocos-mcp-workflow/SKILL.md');
-  assert.equal(
-    result.value.data.manifest,
-    '.agents/skills/funplay-cocos-mcp-workflow/.funplay-cocos-mcp.json'
-  );
-  assert.equal(fs.existsSync(path.join(projectPath, result.value.data.manifest)), true);
-});
 
 for (const clientId of ['opencode', 'codebuddy']) {
   test(`Skills tool schemas and execution support ${clientId} project directories`, async (t) => {
     const projectPath = fs.mkdtempSync(path.join(os.tmpdir(), `funplay-${clientId}-tools-`));
     t.after(() => fs.rmSync(projectPath, { recursive: true, force: true }));
     const registry = createRegistry('full', projectPath);
-    for (const name of ['list_project_instructions', 'create_project_skill', 'create_cocos_mcp_project_skill']) {
+    for (const name of ['list_project_instructions', 'create_project_skill']) {
       const tool = registry.listTools().find((entry) => entry.name === name);
       assert.deepEqual(tool.inputSchema.properties.clientId.enum, SKILL_PLATFORMS.map((platform) => platform.id));
     }
-    const result = await registry.callToolDetailed('create_cocos_mcp_project_skill', { clientId });
-    assert.equal(result.value.data.path, `.${clientId}/skills/funplay-cocos-mcp-workflow/SKILL.md`);
-    assert.equal(fs.existsSync(path.join(projectPath, result.value.data.path)), true);
-    assert.equal(fs.existsSync(path.join(projectPath, '.agents')), false);
     const custom = await registry.callToolDetailed('create_project_skill', { clientId, skillName: 'project-review' });
     assert.equal(custom.value.data.path, `.${clientId}/skills/project-review/SKILL.md`);
     const listed = await registry.callToolDetailed('list_project_instructions', { clientId });
     assert.equal(listed.value.ok, true);
-    assert.ok(JSON.stringify(listed.value.data).includes(result.value.data.path));
+    assert.ok(JSON.stringify(listed.value.data).includes(custom.value.data.path));
   });
 }
 

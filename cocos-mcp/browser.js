@@ -4,6 +4,8 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const manifest = require('./package.json');
+/** Authenticated helper and runtime relay share this extension's lifecycle. */
+const creatorBridge = require('./lib/creator-bridge/main');
 const { getServerName, formatTargetPreview, buildTargets, configureTarget, getTargetStatuses } = require('./lib/client-config');
 const { readOptionalText, writeTextIfUnchanged } = require('./lib/atomic-file');
 const {
@@ -22,6 +24,7 @@ const { PromptProvider } = require('./lib/prompts');
 const { InteractionLog } = require('./lib/interaction-log');
 const { RuntimeLog } = require('./lib/runtime-log');
 const { captureScriptExecution } = require('./lib/script-execution');
+const { ConnectionFile } = require('./lib/connection-file');
 const { checkForUpdate } = require('./lib/update-checker');
 const { installLatestUpdate } = require('./lib/updater');
 const {
@@ -31,17 +34,9 @@ const {
 } = require('./lib/global-install');
 const { normalizeSavedToolProfiles } = require('./lib/tool-profiles');
 const { detectEditorLanguage, normalizeLanguagePreference, resolveLanguage } = require('./lib/i18n');
-const { createProjectSkill } = require('./lib/project-instructions');
-const { SKILL_PLATFORMS } = require('./lib/skill-platforms');
-const {
-  getProjectSkillsState: readProjectSkillsState,
-  previewBuiltInProjectSkillUpdate,
-  restoreLatestBuiltInProjectSkillBackup,
-  updateBuiltInProjectSkill,
-} = require('./lib/project-skills');
 
-const EXTENSION_NAME = manifest.name || 'funplay-cocos-mcp';
-const LOG_PREFIX = '[Funplay Cocos MCP]';
+const EXTENSION_NAME = manifest.name || 'cocos-mcp-bridge';
+const LOG_PREFIX = '[Cocos MCP]';
 const REPOSITORY_URL = 'https://github.com/FunplayAI/funplay-cocos-mcp';
 const UPDATE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
@@ -58,6 +53,7 @@ class ExtensionService {
     this.lastUpdateInfo = null;
     this.lastInstallInfo = null;
     this.lastGlobalInstallInfo = null;
+    this.connectionFile = new ConnectionFile();
   }
 
   log(level, message, details) {
@@ -95,6 +91,7 @@ class ExtensionService {
 
   unload() {
     this.log('info', 'Extension unloading...');
+    this.connectionFile.remove();
     if (this.server) {
       this.server.stop();
       this.server = null;
@@ -174,13 +171,14 @@ class ExtensionService {
       toolRegistry: this.toolRegistry,
       resourceProvider: this.resourceProvider,
       promptProvider: this.promptProvider,
-      serverName: `Funplay Cocos MCP - ${getProjectName()}`,
+      serverName: `Cocos MCP - ${getProjectName()}`,
       serverVersion: manifest.version || '0.0.0',
       projectName: getProjectName(),
       projectIdentity: getProjectIdentity(),
     });
 
     await this.server.start();
+    this.connectionFile.write(getProjectPath(), this.getStatus());
     this.log('info', `MCP server started at ${this.getStatus().url}`);
     this.log('info', `If this tool saves you time, please consider giving it a Star on GitHub: ${REPOSITORY_URL}`);
     return this.getStatus();
@@ -188,6 +186,7 @@ class ExtensionService {
 
   async stopServer() {
     this.log('info', 'Stop requested.');
+    this.connectionFile.remove();
     if (this.server) {
       await this.server.stop();
       this.server = null;
@@ -317,11 +316,9 @@ class ExtensionService {
       installInfo: this.lastInstallInfo,
       installation: this.getInstallationState(),
       globalInstallInfo: this.lastGlobalInstallInfo,
-      projectSkills: this.getProjectSkillsState(),
+
       clientConfig: this.getClientConfig(),
-      projectSkillsByClient: Object.fromEntries(SKILL_PLATFORMS.map((platform) => [
-        platform.id, this.getProjectSkillsState({ clientId: platform.id }),
-      ])),
+
       clientTargets: getTargetStatuses({
         ...this.config,
         host: status.host,
@@ -352,107 +349,9 @@ class ExtensionService {
     return await this.toolRegistry.callTool(name, args || {});
   }
 
-  getProjectSkillsState(options = {}) {
-    this.ensureRuntime();
-    return readProjectSkillsState(getProjectPath(), this.getSkillOptions(options));
-  }
-
-  getSkillOptions(options = {}) {
-    return { ...options, clientId: options.clientId || this.config.lastClientTargetId };
-  }
-
-  previewProjectSkillUpdate(options = {}) {
-    return previewBuiltInProjectSkillUpdate(getProjectPath(), this.getSkillOptions(options));
-  }
-
-  installOrUpdateProjectSkill(options = {}) {
-    const result = updateBuiltInProjectSkill(getProjectPath(), {
-      ...this.getSkillOptions(options),
-      skillName: options.skillName,
-      allowModified: options.allowModified === true,
-      onlyIfMissing: options.onlyIfMissing === true,
-      extensionVersion: manifest.version || '0.0.0',
-    });
-    this.log(
-      'info',
-      result.installed
-        ? `Installed recommended project skill at ${result.write.path}.`
-        : result.updated
-          ? `Updated recommended project skill at ${result.write.path}.`
-          : result.skipped
-            ? `Kept existing project skill at ${result.state.path}.`
-            : 'Recommended project skill is already current.'
-    );
-    return {
-      ...result,
-      projectSkills: this.getProjectSkillsState(),
-    };
-  }
-
-  restoreProjectSkillBackup(options = {}) {
-    const result = restoreLatestBuiltInProjectSkillBackup(getProjectPath(), this.getSkillOptions(options));
-    this.log('info', `Restored project skill backup ${result.source.path}.`);
-    return {
-      ...result,
-      projectSkills: this.getProjectSkillsState(),
-    };
-  }
-
-  createProjectSkillFromPanel(options = {}) {
-    const result = createProjectSkill(getProjectPath(), {
-      ...this.getSkillOptions(options),
-      skillName: options.skillName,
-      title: options.title,
-      description: options.description,
-      instructions: options.instructions,
-      overwrite: false,
-    });
-    this.log('info', `Created project skill at ${result.path}.`);
-    return {
-      created: true,
-      ...result,
-      projectSkills: this.getProjectSkillsState(),
-    };
-  }
-
-  revealProjectSkill(target) {
-    const relativePath = String(target && target.path || target || '').trim();
-    const state = this.getProjectSkillsState(target && typeof target === 'object' ? target : {});
-    const skill = state.skills.find((item) => item.path === relativePath);
-    if (!skill) {
-      throw new Error(`Project skill not found: ${relativePath}`);
-    }
-    const filePath = path.resolve(state.projectPath, skill.path);
-
-    try {
-      const electron = require('electron');
-      if (electron && electron.shell && typeof electron.shell.showItemInFolder === 'function') {
-        electron.shell.showItemInFolder(filePath);
-        return { opened: true, path: skill.path, method: 'electron.shell.showItemInFolder' };
-      }
-    } catch (error) {
-      // Fall through to a platform file manager.
-    }
-
-    const childProcess = require('child_process');
-    const command = process.platform === 'darwin'
-      ? 'open'
-      : process.platform === 'win32'
-        ? 'explorer'
-        : 'xdg-open';
-    const args = process.platform === 'darwin'
-      ? ['-R', filePath]
-      : process.platform === 'win32'
-        ? [`/select,${filePath}`]
-        : [path.dirname(filePath)];
-    const child = childProcess.spawn(command, args, { detached: true, stdio: 'ignore' });
-    child.unref();
-    return { opened: true, path: skill.path, method: command };
-  }
-
   async checkUpdates(options = {}) {
     this.ensureRuntime();
-    this.log('info', 'Checking GitHub for newer Funplay Cocos MCP releases.');
+    this.log('info', 'Checking GitHub for newer Cocos MCP releases.');
     this.lastUpdateInfo = await checkForUpdate({
       currentVersion: manifest.version || '0.0.0',
       timeoutMs: Number.isFinite(options.timeoutMs) ? options.timeoutMs : 5000,
@@ -521,7 +420,7 @@ class ExtensionService {
     };
     this.log(
       'info',
-      `Installed Funplay Cocos MCP ${installResult.installedVersion}; ` +
+      `Installed Cocos MCP ${installResult.installedVersion}; ` +
       (reload.scheduled ? 'extension reload scheduled.' : `reload not scheduled: ${reload.reason}`)
     );
     return this.getPanelState();
@@ -588,8 +487,8 @@ class ExtensionService {
     this.log(
       'info',
       installResult.alreadyInstalled
-        ? `Global Funplay Cocos MCP ${installResult.installedVersion} is already installed.`
-        : `Installed Funplay Cocos MCP ${installResult.installedVersion} for all projects at ` +
+        ? `Global Cocos MCP ${installResult.installedVersion} is already installed.`
+        : `Installed Cocos MCP ${installResult.installedVersion} for all projects at ` +
           `${installResult.globalPackagePath}. ` +
           (activation.enabled
             ? 'Cocos Creator scanned and enabled the global copy.'
@@ -650,7 +549,7 @@ class ExtensionService {
 
     setTimeout(async () => {
       try {
-        this.log('info', 'Reloading Funplay Cocos MCP after update installation.');
+        this.log('info', 'Reloading Cocos MCP after update installation.');
         await Editor.Package.reload(EXTENSION_NAME);
       } catch (error) {
         this.log('error', `Extension reload after update failed: ${error.message}`);
@@ -914,12 +813,19 @@ const service = new ExtensionService();
 
 module.exports = {
   load() {
-    return service.load();
+    creatorBridge.load();
+    try {
+      return Promise.resolve(service.load()).catch((error) => { creatorBridge.unload(); service.unload(); throw error; });
+    } catch (error) {
+      creatorBridge.unload(); service.unload(); throw error;
+    }
   },
   unload() {
-    return service.unload();
+    try { return service.unload(); } finally { creatorBridge.unload(); }
   },
   methods: {
+    /** Report authenticated transport status without exposing its token. */
+    bridgeStatus() { return creatorBridge.methods.bridgeStatus(); },
     openPanel(panelName) {
       return service.openPanel(panelName);
     },
@@ -929,9 +835,7 @@ module.exports = {
     openSettingsPanel() {
       return service.openPanel('settings');
     },
-    openProjectSkillsPanel() {
-      return service.openPanel('project-skills');
-    },
+
     startServer() {
       return service.startServer();
     },
@@ -959,24 +863,7 @@ module.exports = {
     callToolFromPanel(name, args) {
       return service.callToolFromPanel(name, args);
     },
-    getProjectSkillsState(options) {
-      return service.getProjectSkillsState(options);
-    },
-    previewProjectSkillUpdate(options) {
-      return service.previewProjectSkillUpdate(options);
-    },
-    installOrUpdateProjectSkill(options) {
-      return service.installOrUpdateProjectSkill(options);
-    },
-    restoreProjectSkillBackup(options) {
-      return service.restoreProjectSkillBackup(options);
-    },
-    createProjectSkillFromPanel(options) {
-      return service.createProjectSkillFromPanel(options);
-    },
-    revealProjectSkill(target) {
-      return service.revealProjectSkill(target);
-    },
+
     checkUpdates() {
       return service.checkUpdates();
     },

@@ -26,7 +26,6 @@ const { SKILL_PLATFORMS } = require('./skill-platforms');
 const { UI_2D_LAYER, assertSerializedPrefabMetadata } = require('./prefab-metadata');
 const { normalizeSceneTarget, saveSceneContent } = require('./scenes');
 const {
-  createCocosMcpProjectSkill,
   createProjectSkill,
   listProjectInstructions,
   readProjectInstruction,
@@ -51,6 +50,7 @@ const { assertJavascriptSafety } = require('./javascript-safety');
 const { safeStringify } = require('./utils');
 const { SCRIPT_EXECUTION_PACKET } = require('./script-execution');
 const previewRuntime = require('./preview-runtime');
+const { requestCompatibilityBridge } = require('./runtime-client');
 const IMAGE_DATA_URI_PREFIX = 'data:image/png;base64,';
 
 const TOOL_CATEGORY_RULES = [
@@ -483,8 +483,15 @@ function createToolRegistry({ getRuntimeContext, getStatus, interactionLog, runt
     } else if (context === 'editor') {
       if (typeof editorExecutor !== 'function') throw new Error('Editor JavaScript execution is unavailable.');
       packet = await editorExecutor(payload);
+    } else if (context === 'runtime') {
+      const timeoutMs = args.timeoutMs ?? 5000;
+      if (!Number.isInteger(timeoutMs) || timeoutMs < 100 || timeoutMs > 30000) throw new Error('runtime timeoutMs must be an integer from 100 to 30000.');
+      const projectPath = getRuntimeContext().projectPath;
+      const status = await requestCompatibilityBridge(projectPath, 'status');
+      if (!status.runtimeInspector?.javascript) throw new Error('Runtime JavaScript requires the updated cocos3-codex-bridge and preview-template; install them and restart Creator.');
+      return requestCompatibilityBridge(projectPath, 'execute-runtime-javascript', [{ code: args.code, args: args.args || {}, instanceId: args.instanceId, timeoutMs }], timeoutMs + 3000);
     } else {
-      throw new Error(`Unknown execution context '${args.context}'. Expected 'scene' or 'editor'.`);
+      throw new Error(`Unknown execution context '${args.context}'. Expected 'scene', 'editor', or 'runtime'.`);
     }
     // The internal packet also transports logs on failures across scene IPC.
     // Keep support for an older scene host while an extension is being reloaded.
@@ -497,12 +504,14 @@ function createToolRegistry({ getRuntimeContext, getStatus, interactionLog, runt
     {
       name: 'execute_javascript',
       profile: 'core',
-      description: '[primary] Execute JavaScript in either the scene or editor context. Use context=\"scene\" for live scene/runtime inspection and mutation, or context=\"editor\" for Editor APIs, asset-db workflows, MCP orchestration, local filesystem access, and higher-level automation. Prefer this as the main flexible tool when many narrow tools would be noisy.',
+      description: '[primary] Execute JavaScript in scene, editor, or runtime context. scene is the editor scene process; editor provides Editor APIs and asset-db. runtime executes in the running Web preview with cc, scene, args and env, returning game data with page/scene metadata. Runtime requires the bundled helper and preview-template; select instanceId when multiple previews are connected. Calls may mutate the game. A timeout does not cancel execution; never replay automatically.',
       inputSchema: createSchema(
         {
-          context: { type: 'string', description: 'Execution context: scene or editor.' },
+          context: { type: 'string', enum: ['scene', 'editor', 'runtime'], description: 'scene: editor scene process; editor: Editor APIs; runtime: actual running Web preview.' },
           code: { type: 'string', description: 'JavaScript code to execute. May directly return a value, define run(env), or export a function.' },
           args: { type: 'object', description: 'Optional JSON object passed into the script.' },
+          instanceId: { type: 'string', description: 'Runtime preview instance from get_cocos_connection.runtimeInspector.instanceIds. Required when multiple previews are connected.' },
+          timeoutMs: { type: 'integer', minimum: 100, maximum: 30000, default: 5000, description: 'Runtime response deadline; does not interrupt JavaScript execution.' },
           safety_checks: { type: 'boolean', description: 'Override the project default JavaScript safety checks for this call.' },
         },
         ['context', 'code']
@@ -674,23 +683,7 @@ function createToolRegistry({ getRuntimeContext, getStatus, interactionLog, runt
         return createProjectSkill(projectPath, args);
       },
     },
-    {
-      name: 'create_cocos_mcp_project_skill',
-      profile: 'full',
-      description: '[core] Create the recommended Funplay Cocos MCP workflow Skill for a supported client (defaults to Codex).',
-      inputSchema: createSchema(
-        {
-          skillName: { type: 'string', description: 'Optional filesystem-safe project skill name.' },
-          clientId: { type: 'string', enum: SKILL_PLATFORMS.map((platform) => platform.id), description: 'Target client; defaults to Codex. Kimi uses the nearest Git root.' },
-          overwrite: { type: 'boolean', description: 'Allow overwriting an existing skill. Defaults to true.' },
-        },
-        []
-      ),
-      handler: async (args) => {
-        const { projectPath, version } = getRuntimeContext();
-        return createCocosMcpProjectSkill(projectPath, { ...args, extensionVersion: version });
-      },
-    },
+
     {
       name: 'set_selection',
       profile: 'core',

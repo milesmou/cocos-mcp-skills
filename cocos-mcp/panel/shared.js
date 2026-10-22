@@ -5,7 +5,7 @@ const ZH = require('../i18n/zh');
 const { detectEditorLanguage, resolveLanguage, translate } = require('../lib/i18n');
 const { localizeToolDescription } = require('./tool-description-i18n');
 
-const PKG = 'funplay-cocos-mcp';
+const PKG = 'cocos-mcp-bridge';
 const DICTIONARIES = { en: EN, zh: ZH };
 
 function request(message, ...args) {
@@ -92,21 +92,14 @@ function dashboardTemplate() {
       <section class="section client-section">
         <div class="section-heading">
           <div class="section-title" data-i18n="dashboard.client_setup">One-Click MCP Configuration</div>
-          <ui-button id="openProjectSkillsBtn" data-i18n="dashboard.project_skills">Project Skills</ui-button>
         </div>
         <div class="client-actions">
           <ui-select id="clientTargetSelect"></ui-select>
           <ui-button id="configureClientBtn" class="configure-action" data-i18n="dashboard.configure_short">Configure</ui-button>
-          <ui-button id="configureWithSkillsBtn" class="configure-skills-action" data-i18n="dashboard.configure_skills">Configure + Skills</ui-button>
         </div>
-        <div id="configureSkillsHint" class="hint-line setup-hint"></div>
         <div id="clientActionStatus" class="action-status" aria-live="polite" hidden></div>
         <div id="clientTargetStatus" class="connection-status" aria-live="polite"></div>
         <div id="clientTargetDetails" class="hint-line config-location"></div>
-        <div id="projectSkillsNotice" class="skills-notice">
-          <div id="projectSkillsNoticeText" class="skills-notice-text"></div>
-          <ui-button id="openProjectSkillsNoticeBtn" data-i18n="skills_manager.manage">Manage Skills</ui-button>
-        </div>
         <details class="preview-details">
           <summary data-i18n="dashboard.preview_config">Preview selected config</summary>
           <ui-textarea id="clientConfigText" class="client-preview"></ui-textarea>
@@ -275,63 +268,10 @@ function settingsTemplate() {
   `;
 }
 
-function projectSkillsTemplate() {
-  return `
-    <div class="mcp-root project-skills">
-      ${pageHeader('skills_manager.title', 'Project Skills', 'skills_manager.hint', 'Manage skills for the selected client while preserving local changes.')}
-      <section class="section">
-        <label class="form-row"><span data-i18n="dashboard.mcp_client">MCP Client</span>
-          <ui-select id="skillClientSelect"></ui-select>
-        </label>
-        <div id="skillClientStatus" class="hint-line path-line"></div>
-      </section>
-
-      <section class="section">
-        <div class="section-heading">
-          <div class="section-title" data-i18n="skills_manager.recommended">Built-in Funplay Skills</div>
-          <ui-button id="refreshBtn" data-i18n="common.refresh">Refresh</ui-button>
-        </div>
-        <div id="builtInSkillList" class="built-in-skill-list"></div>
-      </section>
-
-      <section class="section">
-        <details class="installed-skills">
-          <summary data-i18n="skills_manager.installed">Installed Project Skills</summary>
-          <div id="projectSkillList" class="skill-list"></div>
-        </details>
-      </section>
-
-      <section class="section">
-        <details>
-          <summary data-i18n="skills_manager.create_custom">Create Custom Skill</summary>
-          <div class="create-skill-grid">
-            <label><span data-i18n="skills_manager.skill_name">Skill name</span>
-              <ui-input id="newSkillNameInput" placeholder="scene-qa" data-i18n-placeholder="skills_manager.skill_name_placeholder"></ui-input>
-            </label>
-            <label><span data-i18n="skills_manager.skill_title">Title</span>
-              <ui-input id="newSkillTitleInput" placeholder="Scene QA" data-i18n-placeholder="skills_manager.skill_title_placeholder"></ui-input>
-            </label>
-          </div>
-          <label class="stacked-field"><span data-i18n="skills_manager.skill_description">Trigger description</span>
-            <ui-textarea id="newSkillDescriptionInput" class="short-textarea"></ui-textarea>
-          </label>
-          <label class="stacked-field"><span data-i18n="skills_manager.skill_instructions">Instructions</span>
-            <ui-textarea id="newSkillInstructionsInput" class="skill-instructions"></ui-textarea>
-          </label>
-          <div class="toolbar">
-            <ui-button id="createProjectSkillBtn" class="primary" data-i18n="skills_manager.create">Create Skill</ui-button>
-          </div>
-        </details>
-      </section>
-
-    </div>
-  `;
-}
-
 function templateForMode(mode) {
   if (mode === 'tool-exposure') return toolExposureTemplate();
   if (mode === 'settings') return settingsTemplate();
-  if (mode === 'project-skills') return projectSkillsTemplate();
+
   return dashboardTemplate();
 }
 
@@ -740,140 +680,8 @@ const STYLE = `
   .installation-status.error {
     color: #e86f6f;
   }
-  .skills-notice {
-    display: none;
-    align-items: flex-start;
-    gap: 10px;
-    margin-top: 8px;
-    border-left: 3px solid #d28a2d;
-    border-radius: 5px;
-    padding: 7px 8px;
-    background: rgba(210,138,45,0.12);
-    color: var(--color-normal-contrast);
-  }
-  .skills-notice.visible {
-    display: flex;
-  }
-  .skills-notice.modified {
-    border-left-color: #4a91cf;
-    background: rgba(74,145,207,0.12);
-  }
-  .skills-notice-text {
-    flex: 1;
-    min-width: 0;
-    line-height: 1.4;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-  .skill-status-pill {
-    border-radius: 4px;
-    padding: 3px 8px;
-    background: #666;
-    color: #fff;
-    font-size: 11px;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-  .skill-status-pill.current {
-    background: rgba(65,150,95,0.18);
-    color: #78d197;
-  }
-  .skill-status-pill.update-available {
-    background: #b67623;
-  }
-  .skill-status-pill.modified {
-    background: #397aa9;
-  }
-  .skill-status-pill.missing {
-    background: #777;
-  }
-  .built-in-skill-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .built-in-skill-card {
-    border: 0;
-    border-radius: 6px;
-    padding: 15px;
-    background: rgba(0,0,0,0.12);
-  }
-  .built-in-skill-card .inline-status { margin-top: 10px; font-size: 12px; }
-  .built-in-skill-card .toolbar { margin-top: 12px; }
-  .skill-file-details { margin-top: 12px; font-size: 12px; }
-  .skill-file-details summary { font-weight: 400; color: var(--color-normal-contrast-weakest); }
-  .installed-skills .skill-list { margin-top: 12px; }
-  .built-in-skill-heading {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 10px;
-  }
-  .built-in-skill-title {
-    font-size: 14px;
-    color: var(--color-normal-contrast);
-    font-weight: 700;
-    word-break: break-word;
-  }
-  .built-in-skill-description {
-    margin-top: 4px;
-    color: var(--color-normal-contrast-weak);
-    font-size: 12px;
-    line-height: 1.5;
-    word-break: break-word;
-  }
-  .skill-backup-line {
-    margin-top: 7px;
-  }
-  .skill-diff-details {
-    margin-top: 9px;
-  }
-  pre.skill-diff {
-    min-height: 160px;
-    max-height: 420px;
-    color: #d9e7ff;
-  }
-  .skill-list {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-  }
-  .skill-card {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 10px;
-    border: 1px solid var(--color-normal-border);
-    border-radius: 5px;
-    padding: 8px;
-    background: rgba(0,0,0,0.10);
-  }
-  .skill-card-title {
-    color: var(--color-normal-contrast);
-    font-weight: 700;
-    word-break: break-word;
-  }
-  .skill-card-description,
-  .skill-card-meta {
-    margin-top: 3px;
-    color: var(--color-normal-contrast-weakest);
-    font-size: 11px;
-    word-break: break-word;
-  }
-  .skill-format-warning {
-    color: #d99b2b;
-  }
-  .create-skill-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-    margin-top: 12px;
-  }
   .stacked-field {
     margin-top: 8px;
-  }
-  .skill-instructions {
-    min-height: 130px;
   }
   .path-line {
     margin: 5px 0 8px 0;
@@ -958,9 +766,7 @@ const STYLE = `
   .client-actions ui-select { grid-column: 1 / -1; }
   .client-actions ui-button { min-height: 32px; font-size: 13px; text-align: center; }
   .dashboard ui-button.configure-action { background: #307d4d; border-color: #418c5e; color: #fff; }
-  .dashboard ui-button.configure-skills-action { background: #376f9e; border-color: #4c85b5; color: #fff; }
   .dashboard ui-button.configure-action:hover { background: #388858; }
-  .dashboard ui-button.configure-skills-action:hover { background: #417eae; }
   .dashboard ui-button[disabled] { opacity: 0.45; }
   .setup-hint { margin: 7px 0 10px; }
   .connection-status { color: var(--color-normal-contrast-weak); font-weight: 600; }
@@ -971,7 +777,6 @@ const STYLE = `
   .config-location { margin-top: 3px; white-space: pre-line; overflow-wrap: anywhere; }
   .dashboard .preview-details { margin-top: 10px; font-size: 12px; }
   .compact-warning { color: #e1af61; font-size: 12px; margin-top: 8px; }
-  .dashboard .skills-notice { margin-top: 10px; padding: 9px 10px; font-size: 12px; }
   .dashboard .compact-list { min-height: 170px; max-height: 400px; padding: 8px; }
   .dashboard .mini-item { padding: 10px; margin-bottom: 8px; }
   .dashboard .mini-title { font-size: 13px; }
@@ -1018,20 +823,16 @@ const STYLE = `
     .dashboard h1 { font-size: 19px; }
     .dashboard .header-actions { gap: 5px; }
     .form-row { grid-template-columns: 85px minmax(0, 1fr); gap: 8px; }
-    .dashboard .skills-notice { flex-wrap: wrap; }
-    .dashboard .skills-notice-text { flex-basis: 100%; }
   }
   @container mcp-panel (max-width: 500px) {
     .summary-grid,
     .service-grid,
     .settings-grid,
     .tool-config-grid,
-    .category-controls,
-    .create-skill-grid {
+    .category-controls{
       grid-template-columns: 1fr;
     }
     .category-row { grid-template-columns: 1fr; }
-    .built-in-skill-heading { flex-wrap: wrap; }
     .profile-row ui-input, .profile-row ui-select { flex: 1 1 100%; }
     .plain-header .titlebar { gap: 10px; }
     .plain-header h1 { font-size: 19px; }
@@ -1073,22 +874,18 @@ const SELECTORS = {
   copyGlobalPathBtn: '#copyGlobalPathBtn',
   globalInstallStatus: '#globalInstallStatus',
   globalInstallPath: '#globalInstallPath',
-  projectSkillsNotice: '#projectSkillsNotice',
-  skillClientSelect: '#skillClientSelect',
-  skillClientStatus: '#skillClientStatus',
+
   useProjectPortBtn: '#useProjectPortBtn',
   pinCurrentPortBtn: '#pinCurrentPortBtn',
-  projectSkillsNoticeText: '#projectSkillsNoticeText',
+
   openToolsBtn: '#openToolsBtn',
   openSettingsBtn: '#openSettingsBtn',
-  openProjectSkillsBtn: '#openProjectSkillsBtn',
-  openProjectSkillsNoticeBtn: '#openProjectSkillsNoticeBtn',
+
   openDashboardBtn: '#openDashboardBtn',
   refreshBtn: '#refreshBtn',
   clientTargetSelect: '#clientTargetSelect',
   configureClientBtn: '#configureClientBtn',
-  configureWithSkillsBtn: '#configureWithSkillsBtn',
-  configureSkillsHint: '#configureSkillsHint',
+
   clientActionStatus: '#clientActionStatus',
   clientTargetStatus: '#clientTargetStatus',
   clientTargetDetails: '#clientTargetDetails',
@@ -1114,13 +911,7 @@ const SELECTORS = {
   disabledCategoriesInput: '#disabledCategoriesInput',
   enabledToolsInput: '#enabledToolsInput',
   disabledToolsInput: '#disabledToolsInput',
-  builtInSkillList: '#builtInSkillList',
-  projectSkillList: '#projectSkillList',
-  newSkillNameInput: '#newSkillNameInput',
-  newSkillTitleInput: '#newSkillTitleInput',
-  newSkillDescriptionInput: '#newSkillDescriptionInput',
-  newSkillInstructionsInput: '#newSkillInstructionsInput',
-  createProjectSkillBtn: '#createProjectSkillBtn',
+
 };
 
 function createPanel(mode) {
@@ -1129,10 +920,7 @@ function createPanel(mode) {
     style: STYLE,
     $: SELECTORS,
     methods: createMethods(mode),
-    ready() {
-      this.mode = mode;
-      this.state = null;
-      this.skillDiffs = {};
+    ready() {;
       this.detectedLanguage = detectEditorLanguage(global.Editor);
       this.language = resolveLanguage('auto', this.detectedLanguage);
       this.applyStaticTranslations();
@@ -1252,8 +1040,7 @@ function createMethods(mode) {
 
       this.renderUpdateStatus();
       this.renderInstallationStatus();
-      this.renderProjectSkillsNotice();
-      this.renderProjectSkills();
+
       this.renderToolSummary();
       this.renderActivity();
       this.renderToolProfiles();
@@ -1397,234 +1184,7 @@ function createMethods(mode) {
       }
       this.$.globalInstallStatus.textContent = status;
     },
-    selectedSkillClientId() {
-      return this.$.skillClientSelect && this.$.skillClientSelect.value
-        || this.$.clientTargetSelect && this.$.clientTargetSelect.value
-        || this.state && this.state.config && this.state.config.lastClientTargetId || 'codex';
-    },
-    selectedProjectSkills() {
-      const id = this.selectedSkillClientId();
-      const state = this.state || {};
-      return state.projectSkillsByClient && state.projectSkillsByClient[id]
-        || (state.projectSkills && state.projectSkills.clientId === id ? state.projectSkills : { clientId: id, supported: false, builtIns: [], skills: [], platforms: state.projectSkills && state.projectSkills.platforms || [] });
-    },
-    renderProjectSkillsNotice() {
-      if (!this.$.projectSkillsNotice || !this.$.projectSkillsNoticeText) {
-        return;
-      }
-      const projectSkills = this.selectedProjectSkills();
-      const builtIns = projectSkills && Array.isArray(projectSkills.builtIns)
-        ? projectSkills.builtIns
-        : projectSkills && projectSkills.official
-          ? [projectSkills.official]
-          : [];
-      const attention = builtIns.filter((skill) => skill.status !== 'current');
-      this.$.projectSkillsNotice.classList.remove('visible', 'missing', 'update', 'modified');
-      if (projectSkills.error) {
-        this.$.projectSkillsNoticeText.textContent = `${projectSkills.clientName || projectSkills.clientId}\n${this.t('skills_manager.read_error', { error: projectSkills.error })}`;
-        this.$.projectSkillsNotice.classList.add('visible', 'modified');
-        return;
-      }
-      if (!attention.length) {
-        this.$.projectSkillsNoticeText.textContent = '';
-        return;
-      }
 
-      const notices = [
-        ['missing', 'skills_manager.notice_missing_list'],
-        ['update-available', 'skills_manager.notice_update_list'],
-        ['modified', 'skills_manager.notice_modified_list'],
-      ].map(([status, key]) => {
-        const skills = attention.filter((skill) => skill.status === status);
-        if (!skills.length) {
-          return '';
-        }
-        return this.t(key, {
-          count: skills.length,
-          names: skills.map((skill) => skill.title || skill.skillName).join(', '),
-        });
-      }).filter(Boolean);
-
-      this.$.projectSkillsNoticeText.textContent = `${projectSkills.clientName || projectSkills.clientId}\n${notices.join('\n')}`;
-      this.$.projectSkillsNotice.classList.add('visible');
-      if (attention.some((skill) => skill.status === 'modified')) {
-        this.$.projectSkillsNotice.classList.add('modified');
-      } else if (attention.some((skill) => skill.status === 'update-available')) {
-        this.$.projectSkillsNotice.classList.add('update');
-      } else {
-        this.$.projectSkillsNotice.classList.add('missing');
-      }
-    },
-    renderProjectSkills() {
-      if (!this.$.builtInSkillList && !this.$.projectSkillList) {
-        return;
-      }
-      if (this.$.skillClientSelect) {
-        const selected = this.selectedSkillClientId();
-        const targets = this.state && this.state.clientTargets || [];
-        this.$.skillClientSelect.innerHTML = targets.map((target) => `<option value="${target.id}">${target.name}</option>`).join('');
-        this.$.skillClientSelect.value = selected;
-      }
-      const projectSkills = this.selectedProjectSkills();
-      if (this.$.skillClientStatus) this.$.skillClientStatus.textContent = projectSkills.error
-        ? this.t('skills_manager.read_error', { error: projectSkills.error })
-        : projectSkills.supported
-          ? `${projectSkills.clientName}: ${projectSkills.skillRoot}` : this.t('skills_manager.unsupported');
-      this.setDisabled(this.$.createProjectSkillBtn, !projectSkills.supported || Boolean(projectSkills.error));
-      const builtIns = projectSkills && Array.isArray(projectSkills.builtIns)
-        ? projectSkills.builtIns
-        : projectSkills && projectSkills.official
-          ? [projectSkills.official]
-          : [];
-
-      if (this.$.builtInSkillList) {
-        this.$.builtInSkillList.innerHTML = '';
-        if (!builtIns.length) {
-          this.$.builtInSkillList.textContent = this.t('skills_manager.no_built_in_skills');
-        } else {
-          const builtInFragment = document.createDocumentFragment();
-          builtIns.forEach((skill) => {
-            const card = document.createElement('article');
-            card.className = 'built-in-skill-card';
-            card.dataset.skillName = skill.skillName;
-
-            const heading = document.createElement('div');
-            heading.className = 'built-in-skill-heading';
-            const headingMain = document.createElement('div');
-            const title = document.createElement('div');
-            title.className = 'built-in-skill-title';
-            title.textContent = skill.title || skill.skillName;
-            headingMain.appendChild(title);
-            const description = document.createElement('div');
-            description.className = 'built-in-skill-description';
-            description.textContent = skill.description || '';
-            headingMain.appendChild(description);
-            heading.appendChild(headingMain);
-
-            const normalizedStatus = String(skill.status || 'missing').replace(/-/g, '_');
-            const status = document.createElement('div');
-            status.className = `skill-status-pill ${skill.status || 'missing'}`;
-            status.textContent = this.t(`skills_manager.status_${normalizedStatus}`);
-            heading.appendChild(status);
-            card.appendChild(heading);
-
-            const detail = document.createElement('div');
-            detail.className = 'inline-status';
-            detail.textContent = this.t(`skills_manager.detail_${normalizedStatus}`, {
-              installed: skill.installedTemplateVersion || this.t('common.unknown'),
-              latest: skill.templateVersion || this.t('common.unknown'),
-            });
-            card.appendChild(detail);
-
-            const pathLine = document.createElement('div');
-            pathLine.className = 'hint-line path-line';
-            pathLine.textContent = this.t('skills_manager.path', { path: skill.path || '' })
-              + (skill.legacyPath ? `\n${this.t('skills_manager.legacy_path', { path: skill.legacyPath })}` : '');
-            const fileDetails = document.createElement('details');
-            fileDetails.className = 'skill-file-details';
-            const fileSummary = document.createElement('summary');
-            fileSummary.textContent = this.t('skills_manager.file_details');
-            fileDetails.appendChild(fileSummary);
-            fileDetails.appendChild(pathLine);
-
-            const toolbar = document.createElement('div');
-            toolbar.className = 'toolbar';
-            const actionKey = skill.status === 'missing'
-              ? 'skills_manager.install'
-              : skill.status === 'current'
-                ? 'skills_manager.current_action'
-                : 'skills_manager.update';
-            const actions = [
-              { action: 'install', label: actionKey, disabled: skill.status === 'current', primary: true },
-              { action: 'preview', label: 'skills_manager.view_changes', disabled: skill.status === 'current' },
-              { action: 'restore', label: 'skills_manager.restore_backup', disabled: skill.backupCount < 1 },
-              { action: 'reveal', label: 'skills_manager.reveal', disabled: !skill.installed || Boolean(skill.legacyPath) },
-            ];
-            actions.filter((item) => !item.disabled).forEach((item) => {
-              const button = document.createElement('ui-button');
-              button.textContent = this.t(item.label);
-              button.dataset.skillAction = item.action;
-              button.dataset.skillName = skill.skillName;
-              if (item.primary) {
-                button.classList.add('primary');
-              }
-              this.setDisabled(button, item.disabled);
-              toolbar.appendChild(button);
-            });
-            card.appendChild(toolbar);
-
-            const backup = document.createElement('div');
-            backup.className = 'hint-line skill-backup-line';
-            backup.textContent = skill.latestBackup
-              ? this.t('skills_manager.latest_backup', {
-                count: skill.backupCount,
-                path: skill.latestBackup.path,
-              })
-              : this.t('skills_manager.no_backup');
-            fileDetails.appendChild(backup);
-            card.appendChild(fileDetails);
-
-            const details = document.createElement('details');
-            details.className = 'skill-diff-details';
-            const summary = document.createElement('summary');
-            summary.textContent = this.t('skills_manager.diff_preview');
-            details.appendChild(summary);
-            const diff = document.createElement('pre');
-            diff.className = 'skill-diff';
-            diff.textContent = this.skillDiffs && this.skillDiffs[`${this.selectedSkillClientId()}:${skill.skillName}`] || '';
-            details.appendChild(diff);
-            details.open = Boolean(diff.textContent);
-            if (diff.textContent) card.appendChild(details);
-
-            builtInFragment.appendChild(card);
-          });
-          this.$.builtInSkillList.appendChild(builtInFragment);
-        }
-      }
-
-      if (!this.$.projectSkillList) {
-        return;
-      }
-      const skills = projectSkills.skills || [];
-      this.$.projectSkillList.innerHTML = '';
-      if (!skills.length) {
-        this.$.projectSkillList.textContent = this.t('skills_manager.no_skills');
-        return;
-      }
-      const fragment = document.createDocumentFragment();
-      skills.forEach((skill) => {
-        const card = document.createElement('div');
-        card.className = 'skill-card';
-
-        const main = document.createElement('div');
-        const title = document.createElement('div');
-        title.className = 'skill-card-title';
-        title.textContent = `${skill.title || skill.name || this.t('common.unknown')}` +
-          (skill.builtIn || skill.official ? ` · ${this.t('skills_manager.official_badge')}` : '');
-        main.appendChild(title);
-
-        if (skill.description) {
-          const description = document.createElement('div');
-          description.className = 'skill-card-description';
-          description.textContent = skill.description;
-          main.appendChild(description);
-        }
-        const meta = document.createElement('div');
-        meta.className = `skill-card-meta${skill.valid ? '' : ' skill-format-warning'}`;
-        meta.textContent = skill.valid
-          ? skill.path
-          : `${skill.path} · ${this.t('skills_manager.invalid_format')}`;
-        main.appendChild(meta);
-        card.appendChild(main);
-
-        const revealButton = document.createElement('ui-button');
-        revealButton.textContent = this.t('skills_manager.reveal');
-        revealButton.dataset.skillPath = skill.path;
-        card.appendChild(revealButton);
-        fragment.appendChild(card);
-      });
-      this.$.projectSkillList.appendChild(fragment);
-    },
     renderToolSummary() {
       if (!this.$.toolSummary) {
         return;
@@ -1885,18 +1445,16 @@ function createMethods(mode) {
       }
       const configured = target.configured ? this.t('client.configured') : this.t('client.not_configured');
       const blocked = this.state && this.state.clientConfig && this.state.clientConfig.configurationBlocked;
-      const skills = this.selectedProjectSkills();
+
       const busy = Boolean(this.configuringClient);
       this.setDisabled(this.$.clientTargetSelect, busy);
       this.setDisabled(this.$.configureClientBtn, blocked || busy);
-      this.setDisabled(this.$.configureWithSkillsBtn, blocked || busy || !skills.supported || Boolean(skills.error));
-      this.setText('configureSkillsHint', skills.error ? this.t('skills_manager.read_error', { error: skills.error })
-        : this.t(skills.supported ? 'client.skills_setup_hint' : 'skills_manager.unsupported'));
+
       this.$.clientTargetStatus.classList.remove('configured', 'blocked', 'unconfigured');
       this.$.clientTargetStatus.classList.add(blocked ? 'blocked' : target.configured ? 'configured' : 'unconfigured');
       this.$.clientTargetStatus.textContent = blocked ? this.t('client.fallback_blocked') : `${this.t('client.status')}: ${configured}`;
       this.setText('clientTargetDetails', `${target.configPath}\n${target.serverName || ''} → ${this.state && this.state.clientConfig && this.state.clientConfig.url || ''}`);
-      this.renderProjectSkillsNotice();
+
       const previews = this.state && this.state.clientConfig && Array.isArray(this.state.clientConfig.targets)
         ? this.state.clientConfig.targets
         : [];
@@ -2428,47 +1986,21 @@ function createMethods(mode) {
       element.className = `action-status ${status}`;
       element.hidden = !message;
     },
-    async configureClientSetup(includeSkills = false) {
+    async configureClientSetup() {
       if (this.configuringClient) return;
       const targetId = this.$.clientTargetSelect && this.$.clientTargetSelect.value;
-      if (!targetId) {
-        this.showClientAction(this.t('client.select_first'), 'error');
-        return;
-      }
+      if (!targetId) { this.showClientAction(this.t('client.select_first'), 'error'); return; }
       if (this.state && this.state.clientConfig && this.state.clientConfig.configurationBlocked) {
-        this.showClientAction(this.t('client.fallback_blocked'), 'warning');
-        return;
+        this.showClientAction(this.t('client.fallback_blocked'), 'warning'); return;
       }
       this.configuringClient = true;
       this.renderClientTargetStatus();
       this.showClientAction(this.t('client.configuring'));
-      let configured = false;
       try {
-        // Refresh this client's state before any write. Configuring a connection
-        // must not replace existing Skills, even if they changed during setup.
-        const skills = includeSkills ? await request('get-project-skills-state', { clientId: targetId }) : null;
-        if (includeSkills && (!skills || !skills.supported || skills.error || !Array.isArray(skills.builtIns))) {
-          throw new Error(skills && skills.error || this.t('skills_manager.unsupported'));
-        }
         await request('configure-client', targetId);
-        configured = true;
-        const installed = [];
-        const preserved = [];
-        for (const skill of skills && skills.builtIns || []) {
-          if (skill.status !== 'missing') {
-            if (skill.status !== 'current') preserved.push(skill.skillName);
-            continue;
-          }
-          const outcome = await request('install-or-update-project-skill', { skillName: skill.skillName, clientId: targetId, onlyIfMissing: true });
-          if (outcome.installed) installed.push(skill.skillName);
-          else if (!outcome.alreadyCurrent) preserved.push(skill.skillName);
-        }
-        this.showClientAction(this.t(preserved.length ? 'client.setup_review' : includeSkills ? 'client.setup_complete' : 'client.configure_complete', {
-          count: installed.length,
-        }), preserved.length ? 'warning' : 'success');
+        this.showClientAction(this.t('client.configure_complete'), 'success');
       } catch (error) {
-        const message = this.t(configured ? 'client.setup_partial' : 'client.configure_failed', { error: error.message });
-        this.showClientAction(message, 'error');
+        this.showClientAction(this.t('client.configure_failed', { error: error.message }), 'error');
       } finally {
         this.configuringClient = false;
         try { await this.refresh(); } catch (error) { /* refresh already reports the error */ }
@@ -2529,120 +2061,14 @@ function createMethods(mode) {
       }
       await this.runAction(() => request('install-globally'));
     },
-    getBuiltInProjectSkill(skillName) {
-      const projectSkills = this.selectedProjectSkills();
-      const builtIns = projectSkills && Array.isArray(projectSkills.builtIns)
-        ? projectSkills.builtIns
-        : projectSkills && projectSkills.official
-          ? [projectSkills.official]
-          : [];
-      return builtIns.find((skill) => skill.skillName === skillName) || null;
-    },
-    async previewProjectSkill(skillName) {
-      try {
-        const clientId = this.selectedSkillClientId();
-        const result = await request('preview-project-skill-update', { skillName, clientId });
-        this.skillDiffs = this.skillDiffs || {};
-        this.skillDiffs[`${clientId}:${skillName}`] = result.diff || '';
-        this.renderProjectSkills();
-        this.showNotice(this.t('skills_manager.diff_summary', {
-          added: result.addedLines || 0,
-          removed: result.removedLines || 0,
-        }));
-      } catch (error) {
-        this.showNotice(this.t('common.error', { error: error.message }), 'error');
-      }
-    },
-    async installProjectSkill(skillName) {
-      const skill = this.getBuiltInProjectSkill(skillName);
-      if (!skill || skill.status === 'current') {
-        this.showNotice(this.t('skills_manager.already_current'));
-        return;
-      }
 
-      let allowModified = false;
-      if (skill.status !== 'missing') {
-        const titleKey = skill.modified
-          ? 'skills_manager.confirm_modified_title'
-          : 'skills_manager.confirm_update_title';
-        const bodyKey = skill.modified
-          ? 'skills_manager.confirm_modified_body'
-          : 'skills_manager.confirm_update_body';
-        const message = `${this.t(titleKey)}\n\n${this.t(bodyKey, {
-          path: skill.path || '',
-        })}`;
-        if (typeof window !== 'undefined' && typeof window.confirm === 'function' && !window.confirm(message)) {
-          return;
-        }
-        allowModified = skill.modified;
-      }
-      await this.runAction(() => request('install-or-update-project-skill', {
-        skillName,
-        clientId: this.selectedSkillClientId(),
-        allowModified,
-      }));
-    },
-    async restoreProjectSkill(skillName) {
-      const skill = this.getBuiltInProjectSkill(skillName);
-      if (!(skill && skill.latestBackup)) {
-        this.showNotice(this.t('skills_manager.no_backup'));
-        return;
-      }
-      const message = `${this.t('skills_manager.confirm_restore_title')}\n\n${this.t(
-        'skills_manager.confirm_restore_body',
-        { path: skill.latestBackup.path }
-      )}`;
-      if (typeof window !== 'undefined' && typeof window.confirm === 'function' && !window.confirm(message)) {
-        return;
-      }
-      await this.runAction(() => request('restore-project-skill-backup', {
-        skillName,
-        clientId: this.selectedSkillClientId(),
-        backupPath: skill.latestBackup.path,
-      }));
-    },
-    async createProjectSkillFromForm() {
-      const skillName = String(this.getControlValue('newSkillNameInput', '') || '').trim();
-      if (!skillName) {
-        this.showNotice(this.t('skills_manager.skill_name_required'), 'error');
-        return;
-      }
-      try {
-        const result = await request('create-project-skill', {
-          skillName,
-          clientId: this.selectedSkillClientId(),
-          title: String(this.getControlValue('newSkillTitleInput', '') || '').trim(),
-          description: String(this.getControlValue('newSkillDescriptionInput', '') || '').trim(),
-          instructions: String(this.getControlValue('newSkillInstructionsInput', '') || '').trim(),
-        });
-        this.setControlValue('newSkillNameInput', '');
-        this.setControlValue('newSkillTitleInput', '');
-        this.setControlValue('newSkillDescriptionInput', '');
-        this.setControlValue('newSkillInstructionsInput', '');
-        this.showNotice(result);
-        await this.refresh();
-      } catch (error) {
-        this.showNotice(this.t('common.error', { error: error.message }), 'error');
-      }
-    },
-    async revealProjectSkill(skillPath) {
-      const target = String(skillPath || '').trim();
-      if (!target) {
-        return;
-      }
-      await this.runAction(() => request('reveal-project-skill', { path: target, clientId: this.selectedSkillClientId() }));
-    },
     bindEvents() {
       this.on(this.$.clearActivityBtn, 'click', () => this.clearActivity());
       this.on(this.$.dismissNoticeBtn, 'click', () => this.dismissNotice());
       this.on(this.$.restartBtn, 'click', () => this.runAction(() => request('restart-server')));
       this.on(this.$.useProjectPortBtn, 'click', () => this.runAction(() => request('save-config', { portMode: 'project' })));
       this.on(this.$.pinCurrentPortBtn, 'click', () => this.runAction(() => request('save-config', { portMode: 'fixed', port: this.state.status.port })));
-      this.on(this.$.skillClientSelect, 'change', () => {
-        this.skillDiffs = {};
-        this.renderProjectSkills();
-        this.runAction(() => request('save-config', { lastClientTargetId: this.selectedSkillClientId() }));
-      });
+
       this.on(this.$.refreshBtn, 'click', () => this.refresh());
       this.on(this.$.copyUrlBtn, 'click', () => {
         const status = this.state && this.state.status;
@@ -2667,8 +2093,7 @@ function createMethods(mode) {
       });
       this.on(this.$.openToolsBtn, 'click', () => this.runAction(() => request('open-panel', 'tool-exposure'), { notify: false }));
       this.on(this.$.openSettingsBtn, 'click', () => this.runAction(() => request('open-panel', 'settings'), { notify: false }));
-      this.on(this.$.openProjectSkillsBtn, 'click', () => this.runAction(() => request('open-panel', 'project-skills'), { notify: false }));
-      this.on(this.$.openProjectSkillsNoticeBtn, 'click', () => this.runAction(() => request('open-panel', 'project-skills'), { notify: false }));
+
       this.on(this.$.openDashboardBtn, 'click', () => this.runAction(() => request('open-panel', 'default'), { notify: false }));
       this.on(this.$.enabledInput, 'change', () => this.handleEnableToggle());
       this.on(this.$.portInput, 'change', () => this.persistConfig({ showNotice: true }));
@@ -2687,8 +2112,8 @@ function createMethods(mode) {
         this.renderClientTargetStatus();
         this.persistConfig();
       });
-      this.on(this.$.configureClientBtn, 'click', () => this.configureClientSetup(false));
-      this.on(this.$.configureWithSkillsBtn, 'click', () => this.configureClientSetup(true));
+      this.on(this.$.configureClientBtn, 'click', () => this.configureClientSetup());
+
       this.on(this.$.useCoreBtn, 'click', () => this.applyPreset('core'));
       this.on(this.$.useFullBtn, 'click', () => this.applyPreset('full'));
       this.on(this.$.useCustomBtn, 'click', () => this.applyPreset('custom'));
@@ -2700,36 +2125,7 @@ function createMethods(mode) {
       this.on(this.$.deleteToolProfileBtn, 'click', () => this.deleteSavedToolProfile());
       this.on(this.$.exportToolProfilesBtn, 'click', () => this.exportSavedToolProfiles());
       this.on(this.$.importToolProfilesBtn, 'click', () => this.importSavedToolProfiles());
-      this.on(this.$.builtInSkillList, 'click', (event) => {
-        const target = event.target && typeof event.target.closest === 'function'
-          ? event.target.closest('ui-button')
-          : event.target;
-        const action = target && target.dataset && target.dataset.skillAction;
-        const skillName = target && target.dataset && target.dataset.skillName;
-        if (!action || !skillName) {
-          return;
-        }
-        if (action === 'install') {
-          this.installProjectSkill(skillName);
-        } else if (action === 'preview') {
-          this.previewProjectSkill(skillName);
-        } else if (action === 'restore') {
-          this.restoreProjectSkill(skillName);
-        } else if (action === 'reveal') {
-          const skill = this.getBuiltInProjectSkill(skillName);
-          this.revealProjectSkill(skill && skill.path);
-        }
-      });
-      this.on(this.$.createProjectSkillBtn, 'click', () => this.createProjectSkillFromForm());
-      this.on(this.$.projectSkillList, 'click', (event) => {
-        const target = event.target && typeof event.target.closest === 'function'
-          ? event.target.closest('ui-button')
-          : event.target;
-        if (!target || !target.dataset || !target.dataset.skillPath) {
-          return;
-        }
-        this.revealProjectSkill(target.dataset.skillPath);
-      });
+
       this.on(this.$.savedToolProfileSelect, 'change', () => {
         this.setControlValue('toolProfileNameInput', this.$.savedToolProfileSelect.value || '');
       });

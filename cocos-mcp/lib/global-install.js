@@ -6,7 +6,7 @@ const path = require('path');
 const { compareVersions, normalizeVersion } = require('./update-checker');
 const { installLatestUpdate } = require('./updater');
 
-const PACKAGE_NAME = 'funplay-cocos-mcp';
+const PACKAGE_NAME = 'cocos-mcp-bridge';
 
 function normalizePathForComparison(value) {
   const resolved = path.resolve(String(value || ''));

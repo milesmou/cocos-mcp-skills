@@ -6,8 +6,6 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 const {
-  createCocosMcpProjectSkill,
-  createCocosUiProjectSkill,
   createProjectSkill,
   listProjectInstructions,
   parseSkillMetadata,
@@ -54,33 +52,9 @@ test('createProjectSkill writes a Codex project skill', () => {
   assert.equal(listedSkill.name, 'scene-qa');
 });
 
-test('createCocosMcpProjectSkill writes the recommended MCP workflow skill', () => {
-  const projectPath = fs.mkdtempSync(path.join(os.tmpdir(), 'funplay-cocos-default-skill-'));
-  const result = createCocosMcpProjectSkill(projectPath);
 
-  assert.equal(result.path, '.agents/skills/funplay-cocos-mcp-workflow/SKILL.md');
-  const content = readProjectInstruction(projectPath, result.path).content;
-  assert.match(content, /Funplay Cocos MCP Workflow/);
-  assert.match(content, /inspect_asset_dependencies/);
-  assert.match(content, /do not rebuild the entire prefab unless explicitly requested/);
-  assert.match(content, /^---\nname: funplay-cocos-mcp-workflow\n/);
-});
 
-test('createCocosUiProjectSkill writes the responsive Cocos UI composition skill', () => {
-  const projectPath = fs.mkdtempSync(path.join(os.tmpdir(), 'funplay-cocos-ui-skill-'));
-  const result = createCocosUiProjectSkill(projectPath);
 
-  assert.equal(result.path, '.agents/skills/funplay-cocos-ui-composition/SKILL.md');
-  const content = readProjectInstruction(projectPath, result.path).content;
-  assert.match(content, /^---\nname: funplay-cocos-ui-composition\n/);
-  assert.match(content, /`UITransform`/);
-  assert.match(content, /`Widget`/);
-  assert.match(content, /`SafeArea`/);
-  assert.match(content, /do not rebuild the entire prefab unless explicitly requested/);
-  const referencePath = path.join(path.dirname(result.path), 'references', 'layout-and-adaptation.md');
-  assert.match(readProjectInstruction(projectPath, referencePath).content, /Putting Layout and Widget on the same node/);
-  assert.match(content, /\]\(references\/layout-and-adaptation.md\)/);
-});
 
 test('project instruction helpers reject traversal outside the project', () => {
   const projectPath = fs.mkdtempSync(path.join(os.tmpdir(), 'funplay-cocos-instructions-safe-'));

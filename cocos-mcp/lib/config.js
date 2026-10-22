@@ -138,10 +138,13 @@ function hasRuntimeConfigChanges(currentConfig = {}, nextConfig = {}) {
 function loadConfig(options = {}) {
   const projectPath = options.projectPath || getProjectPath();
   const env = options.env || process.env;
-  const configPath = path.join(projectPath, 'funplay-cocos-mcp.config.json');
-  const fileConfig = loadJson(configPath) || {};
+  const configPath = path.join(projectPath, 'cocos-mcp-bridge.config.json');
+  // Read legacy settings without changing project identity or its derived port.
+  const legacyPath = path.join(projectPath, 'funplay-cocos-mcp.config.json');
+  const settingsPath = fs.existsSync(configPath) ? configPath : legacyPath;
+  const fileConfig = loadJson(settingsPath) || {};
   // Existing config files without a mode retain their old fixed endpoint.
-  const portMode = fileConfig.portMode === 'project' || (!fs.existsSync(configPath) && !env.COCOS_MCP_PORT)
+  const portMode = fileConfig.portMode === 'project' || (!fs.existsSync(settingsPath) && !env.COCOS_MCP_PORT)
     ? 'project' : 'fixed';
   const port = clampPort(env.COCOS_MCP_PORT || (portMode === 'project' ? getProjectPort(projectPath) : fileConfig.port || DEFAULTS.port));
 

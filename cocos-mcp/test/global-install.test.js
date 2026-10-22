@@ -32,7 +32,7 @@ function writeJson(filePath, value) {
 function createExtensionPackage(packagePath, version) {
   fs.mkdirSync(path.join(packagePath, 'lib'), { recursive: true });
   writeJson(path.join(packagePath, 'package.json'), {
-    name: 'funplay-cocos-mcp',
+    name: 'cocos-mcp-bridge',
     version,
     main: 'browser.js',
   });
@@ -45,7 +45,7 @@ function createExtensionPackage(packagePath, version) {
 }
 
 function createZip(sourceRoot, zipPath) {
-  const result = childProcess.spawnSync('zip', ['-qr', zipPath, 'funplay-cocos-mcp'], {
+  const result = childProcess.spawnSync('zip', ['-qr', zipPath, 'cocos-mcp-bridge'], {
     cwd: sourceRoot,
     encoding: 'utf8',
   });
@@ -79,7 +79,7 @@ test('global install state targets the active Creator version directory', () => 
     const homePath = path.join(temp, 'home');
     const editorHomePath = path.join(homePath, '.CocosCreator');
     const projectPath = path.join(temp, 'project');
-    const packagePath = path.join(projectPath, 'extensions', 'funplay-cocos-mcp');
+    const packagePath = path.join(projectPath, 'extensions', 'cocos-mcp-bridge');
     createExtensionPackage(packagePath, '0.4.6');
 
     const state = getGlobalInstallationState({
@@ -98,7 +98,7 @@ test('global install state targets the active Creator version directory', () => 
     );
     assert.equal(
       state.globalPackagePath,
-      path.join(editorHomePath, 'builtin-extensions', '3.8.8', 'funplay-cocos-mcp')
+      path.join(editorHomePath, 'builtin-extensions', '3.8.8', 'cocos-mcp-bridge')
     );
     assert.equal(state.editorVersion, '3.8.8');
     assert.equal(state.scope, 'project');
@@ -119,7 +119,7 @@ test('global directory keeps the legacy fallback outside a running Creator host'
 });
 
 test('activateGlobalExtension asks Creator to scan and enable the global package', async () => {
-  const globalPackagePath = path.resolve('/tmp', 'creator-home', 'builtin-extensions', '3.8.8', 'funplay-cocos-mcp');
+  const globalPackagePath = path.resolve('/tmp', 'creator-home', 'builtin-extensions', '3.8.8', 'cocos-mcp-bridge');
   const packages = [];
   const calls = [];
   const editor = {
@@ -128,7 +128,7 @@ test('activateGlobalExtension asks Creator to scan and enable the global package
         calls.push([packageName, message, ...args]);
         if (message === 'scanning') {
           packages.push({
-            name: 'funplay-cocos-mcp',
+            name: 'cocos-mcp-bridge',
             path: globalPackagePath,
             enable: false,
           });
@@ -149,7 +149,7 @@ test('activateGlobalExtension asks Creator to scan and enable the global package
         );
       },
       async register(packagePath) {
-        packages.push({ name: 'funplay-cocos-mcp', path: packagePath, enable: false });
+        packages.push({ name: 'cocos-mcp-bridge', path: packagePath, enable: false });
       },
       async enable(packagePath) {
         const item = packages.find((candidate) => candidate.path === packagePath);
@@ -177,10 +177,10 @@ test('activateGlobalExtension asks Creator to scan and enable the global package
 });
 
 test('activateGlobalExtension preserves an active project copy after registering the global package', async () => {
-  const projectPackagePath = path.resolve('/tmp', 'project', 'extensions', 'funplay-cocos-mcp');
-  const globalPackagePath = path.resolve('/tmp', 'creator-home', 'builtin-extensions', '3.8.8', 'funplay-cocos-mcp');
+  const projectPackagePath = path.resolve('/tmp', 'project', 'extensions', 'cocos-mcp-bridge');
+  const globalPackagePath = path.resolve('/tmp', 'creator-home', 'builtin-extensions', '3.8.8', 'cocos-mcp-bridge');
   const packages = [{
-    name: 'funplay-cocos-mcp',
+    name: 'cocos-mcp-bridge',
     path: projectPackagePath,
     enable: true,
   }];
@@ -191,7 +191,7 @@ test('activateGlobalExtension preserves an active project copy after registering
         calls.push([packageName, message, ...args]);
         if (message === 'scanning') {
           packages.push({
-            name: 'funplay-cocos-mcp',
+            name: 'cocos-mcp-bridge',
             path: globalPackagePath,
             enable: false,
           });
@@ -223,10 +223,10 @@ test('global install state detects updates and duplicate project copies', () => 
   try {
     const homePath = path.join(temp, 'home');
     const projectPath = path.join(temp, 'project');
-    const projectPackagePath = path.join(projectPath, 'extensions', 'funplay-cocos-mcp');
+    const projectPackagePath = path.join(projectPath, 'extensions', 'cocos-mcp-bridge');
     const globalPackagePath = path.join(
       getGlobalExtensionsDirectory({ homePath }),
-      'funplay-cocos-mcp'
+      'cocos-mcp-bridge'
     );
     createExtensionPackage(projectPackagePath, '0.4.6');
     createExtensionPackage(globalPackagePath, '0.4.5');
@@ -257,7 +257,7 @@ test('an active global install can still be updated', () => {
     const projectPath = path.join(temp, 'project');
     const globalPackagePath = path.join(
       getGlobalExtensionsDirectory({ homePath }),
-      'funplay-cocos-mcp'
+      'cocos-mcp-bridge'
     );
     createExtensionPackage(globalPackagePath, '0.4.5');
 
@@ -282,10 +282,10 @@ test('an equal global version is reused without invoking the installer', async (
   try {
     const homePath = path.join(temp, 'home');
     const projectPath = path.join(temp, 'project');
-    const projectPackagePath = path.join(projectPath, 'extensions', 'funplay-cocos-mcp');
+    const projectPackagePath = path.join(projectPath, 'extensions', 'cocos-mcp-bridge');
     const globalPackagePath = path.join(
       getGlobalExtensionsDirectory({ homePath }),
-      'funplay-cocos-mcp'
+      'cocos-mcp-bridge'
     );
     createExtensionPackage(projectPackagePath, '0.4.6');
     createExtensionPackage(globalPackagePath, '0.4.6');
@@ -317,10 +317,10 @@ test('a newer global version is not downgraded', async () => {
     const homePath = path.join(temp, 'home');
     const editorHomePath = path.join(homePath, '.CocosCreator');
     const projectPath = path.join(temp, 'project');
-    const projectPackagePath = path.join(projectPath, 'extensions', 'funplay-cocos-mcp');
+    const projectPackagePath = path.join(projectPath, 'extensions', 'cocos-mcp-bridge');
     const globalPackagePath = path.join(
       getGlobalExtensionsDirectory({ homePath }),
-      'funplay-cocos-mcp'
+      'cocos-mcp-bridge'
     );
     createExtensionPackage(projectPackagePath, '0.4.6');
     createExtensionPackage(globalPackagePath, '0.5.0');
@@ -345,10 +345,10 @@ test('an invalid package occupying the global path blocks installation', () => {
   try {
     const homePath = path.join(temp, 'home');
     const projectPath = path.join(temp, 'project');
-    const packagePath = path.join(projectPath, 'extensions', 'funplay-cocos-mcp');
+    const packagePath = path.join(projectPath, 'extensions', 'cocos-mcp-bridge');
     const globalPackagePath = path.join(
       getGlobalExtensionsDirectory({ homePath }),
-      'funplay-cocos-mcp'
+      'cocos-mcp-bridge'
     );
     createExtensionPackage(packagePath, '0.4.6');
     fs.mkdirSync(globalPackagePath, { recursive: true });
@@ -376,10 +376,10 @@ test('a dangling symlink at the global path is treated as occupied', async (cont
   try {
     const homePath = path.join(temp, 'home');
     const projectPath = path.join(temp, 'project');
-    const packagePath = path.join(projectPath, 'extensions', 'funplay-cocos-mcp');
+    const packagePath = path.join(projectPath, 'extensions', 'cocos-mcp-bridge');
     const globalPackagePath = path.join(
       getGlobalExtensionsDirectory({ homePath }),
-      'funplay-cocos-mcp'
+      'cocos-mcp-bridge'
     );
     createExtensionPackage(packagePath, '0.4.6');
     fs.mkdirSync(path.dirname(globalPackagePath), { recursive: true });
@@ -421,11 +421,11 @@ test('installGlobalExtension verifies and installs a release into a new global p
     const homePath = path.join(temp, 'home');
     const editorHomePath = path.join(homePath, '.CocosCreator');
     const projectPath = path.join(temp, 'project');
-    const projectPackagePath = path.join(projectPath, 'extensions', 'funplay-cocos-mcp');
+    const projectPackagePath = path.join(projectPath, 'extensions', 'cocos-mcp-bridge');
     createExtensionPackage(projectPackagePath, '0.4.5');
 
     const releaseRoot = path.join(temp, 'release-source');
-    const releasePackagePath = path.join(releaseRoot, 'funplay-cocos-mcp');
+    const releasePackagePath = path.join(releaseRoot, 'cocos-mcp-bridge');
     const zipName = 'Funplay.CocosMcp.v0.4.6.zip';
     const zipPath = path.join(temp, zipName);
     const sumsPath = path.join(temp, 'SHA256SUMS.txt');
@@ -469,7 +469,7 @@ test('installGlobalExtension verifies and installs a release into a new global p
     assert.equal(result.duplicateInstall, true);
     assert.equal(
       result.globalPackagePath,
-      path.join(editorHomePath, 'builtin-extensions', '3.8.8', 'funplay-cocos-mcp')
+      path.join(editorHomePath, 'builtin-extensions', '3.8.8', 'cocos-mcp-bridge')
     );
     assert.equal(manifest.version, '0.4.6');
     assert.equal(fs.existsSync(path.join(result.globalPackagePath, 'lib', 'marker.js')), true);

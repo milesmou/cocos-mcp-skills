@@ -1,63 +1,38 @@
 #!/usr/bin/env node
-
-import { cp, mkdir, readFile, rm, stat } from 'node:fs/promises';
-import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { createRequire } from 'node:module';
+import { existsSync, lstatSync, mkdirSync, renameSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-function usage(message) {
-  if (message) console.error(`Error: ${message}\n`);
-  console.error('Usage: node install-bridge.mjs --project <dir> [--force] [--remove]');
-  process.exit(message ? 1 : 0);
+const require = createRequire(import.meta.url);
+const { readProject, installProjectBridge } = require('../../../lib/project-bridge');
+const args = process.argv.slice(2);
+const allowed = new Set(['--project', '--force', '--remove', '--migrate-legacy', '--help']);
+let projectArgument;
+for (let index = 0; index < args.length; index++) {
+  if (!allowed.has(args[index])) throw new Error(`Unknown argument: ${args[index]}`);
+  if (args[index] === '--project') projectArgument = args[++index];
 }
-
-function parseArgs(argv) {
-  const options = { force: false, remove: false };
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-    if (arg === '--force') options.force = true;
-    else if (arg === '--remove') options.remove = true;
-    else if (arg === '--help' || arg === '-h') usage();
-    else if (arg === '--project') options.project = argv[++index];
-    else usage(`unknown argument: ${arg}`);
+if (args.includes('--help')) {
+  console.log('Usage: node install-bridge.mjs --project <dir> [--migrate-legacy] [--force] [--remove]');
+} else {
+  if (!projectArgument) throw new Error('--project is required');
+  const project = readProject(resolve(projectArgument));
+  if (args.includes('--remove')) {
+    const extensionRoot = resolve(project.projectPath, 'extensions');
+    const target = resolve(extensionRoot, 'cocos-mcp-bridge');
+    if (existsSync(extensionRoot) && lstatSync(extensionRoot).isSymbolicLink()) throw new Error('extensions must be a real directory');
+    if (existsSync(target)) {
+      if (dirname(target) !== extensionRoot || lstatSync(target).isSymbolicLink()) throw new Error('Invalid extension path');
+      const manifest = require(resolve(target, 'package.json'));
+      if (manifest.name !== 'cocos-mcp-bridge') throw new Error('Extension belongs to another package');
+      const backup = resolve(project.projectPath, 'temp/cocos-mcp-install', `removed-${Date.now()}`, 'cocos-mcp-bridge');
+      mkdirSync(dirname(backup), { recursive: true });
+      renameSync(target, backup);
+      console.log(JSON.stringify({ removed: target, backup }, null, 2));
+    }
+  } else {
+    const sourceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+    console.log(JSON.stringify(installProjectBridge(project, sourceRoot, { migrateLegacy: args.includes('--migrate-legacy'), replaceExisting: args.includes('--force') }), null, 2));
   }
-  if (!options.project) usage('--project is required');
-  return options;
+  console.log('Save your work and fully restart Cocos Creator, enable cocos-mcp-bridge if needed, then reconnect.');
 }
-
-function isWithin(parent, child) {
-  const value = relative(parent, child);
-  return value !== '..' && !value.startsWith(`..${sep}`) && !isAbsolute(value);
-}
-
-async function exists(target) {
-  try { await stat(target); return true; } catch { return false; }
-}
-
-const options = parseArgs(process.argv.slice(2));
-const project = resolve(options.project);
-const packagePath = resolve(project, 'package.json');
-let projectPackage;
-try { projectPackage = JSON.parse(await readFile(packagePath, 'utf8')); }
-catch { usage(`cannot read project package.json: ${packagePath}`); }
-const version = String(projectPackage?.creator?.version || '');
-if (!/^3\.8(?:\.|$)/.test(version)) usage(`expected Cocos Creator 3.8.x, found ${version || '<missing>'}`);
-
-const extensionsDir = resolve(project, 'extensions');
-const target = resolve(extensionsDir, 'cocos3-codex-bridge');
-if (!isWithin(project, target)) usage('resolved extension path escapes the project');
-
-if (options.remove) {
-  if (await exists(target)) await rm(target, { recursive: true, force: true });
-  console.log(`Removed ${target}`);
-  process.exit(0);
-}
-
-const source = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'cocos3-codex-bridge');
-if (await exists(target)) {
-  if (!options.force) usage(`extension already exists: ${target}; pass --force to replace it`);
-  await rm(target, { recursive: true, force: true });
-}
-await mkdir(extensionsDir, { recursive: true });
-await cp(source, target, { recursive: true, errorOnExist: true });
-console.log(`Installed ${target}`);
-console.log('Enable or refresh cocos3-codex-bridge in Cocos Creator Extension Manager.');

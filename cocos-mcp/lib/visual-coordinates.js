@@ -11,7 +11,7 @@ const inputWindows = new WeakSet();
 
 // Serialized into the target renderer. Read display geometry, not business data.
 function windowGeometry() {
-  const key = Symbol.for('funplay-cocos-mcp.visual-geometry');
+  const key = Symbol.for('cocos-mcp-bridge.visual-geometry');
   const state = window[key] || (window[key] = { ids: new WeakMap(), nextId: 1 });
   const identity = (node) => {
     if (!state.ids.has(node)) state.ids.set(node, state.nextId++);

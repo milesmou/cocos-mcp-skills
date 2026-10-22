@@ -2,21 +2,20 @@
 
 module.exports = {
   language_code: 'en',
-  title: 'Funplay Cocos MCP',
+  title: 'Cocos MCP',
   panel_server: 'MCP Server',
   panel_tool_exposure: 'Tool Exposure',
   panel_settings: 'MCP Settings',
-  panel_project_skills: 'Project Skills',
+
   menu_server: 'MCP Server',
   menu_tool_exposure: 'Tool Exposure',
   menu_settings: 'MCP Settings',
-  menu_project_skills: 'Project Skills',
 
   'common.dismiss': 'Dismiss',
   'common.action_completed': 'Done.',
   'common.action_failed': 'The action did not complete.',
   'common.copy_failed': 'Could not copy. Check clipboard permissions and try again.',
-  'skills_manager.file_details': 'Location & backups',
+
   'common.unknown': 'Unknown',
   'common.clear': 'Clear',
   'common.yes': 'Yes',
@@ -50,15 +49,14 @@ module.exports = {
   'dashboard.fixed_port_hint': 'Fixed port. Project-derived ports help keep projects separate.',
   'dashboard.client_setup': 'One-Click MCP Configuration',
   'dashboard.configure_short': 'Configure',
-  'dashboard.configure_skills': 'Configure + Skills',
+
   'client.status': 'Status',
-  'client.skills_setup_hint': 'Configure + Skills installs missing built-ins. Existing Skills are kept.',
+
   'client.configuring': 'Configuring…',
   'client.configure_complete': 'Client configured. Reconnect it to load this project.',
-  'client.setup_complete': 'Client configured; {count} Skill(s) installed. Reconnect the client to load changes.',
-  'client.setup_review': 'Client configured; {count} Skill(s) installed. Existing Skills needing review were kept — open Project Skills to update them.',
+
   'client.configure_failed': 'Configuration failed: {error}',
-  'client.setup_partial': 'Client configuration was saved, but Skills setup did not finish: {error}',
+
   'settings.updates': 'Extension Updates',
   'settings.console_logs': 'Console Logs',
   'settings.print_mcp_logs': 'Print MCP logs',
@@ -106,7 +104,7 @@ module.exports = {
   'activity.field_port': 'Port',
   'activity.field_path': 'Path',
   'activity.field_url': 'URL',
-  'dashboard.project_skills': 'Project Skills',
+
   'dashboard.mcp_client': 'MCP Client',
   'dashboard.configure_client': 'One-Click Configure',
   'dashboard.preview_config': 'Preview selected config',
@@ -121,7 +119,7 @@ module.exports = {
   'updates.incomplete': 'Release assets are incomplete; install manually.',
   'updates.auto_check_failed': 'Automatic update check failed: {error}',
   'updates.none_installable': 'No installable update is available.',
-  'updates.confirm_title': 'Install Funplay Cocos MCP {version} now?',
+  'updates.confirm_title': 'Install Cocos MCP {version} now?',
   'updates.confirm_body': 'The updater will verify SHA256SUMS.txt, back up the current extension, replace the package files, and reload the extension when Cocos supports it.',
 
   'tools.title': 'Tool Exposure',
@@ -195,7 +193,7 @@ module.exports = {
   'installation.duplicate': 'A project copy also exists at {path} and may have priority while this project is open. Remove or disable it after verifying the global copy in a clean project.',
   'installation.restart_required': 'Reopen this project or restart Cocos Creator to activate the global copy.',
   'installation.already_available': 'The extension is already available to projects opened with this Creator version.',
-  'installation.confirm_title': 'Install Funplay Cocos MCP for all projects using this Creator version?',
+  'installation.confirm_title': 'Install Cocos MCP for all projects using this Creator version?',
   'installation.confirm_body': 'The latest release will be downloaded, verified with SHA256SUMS.txt, and installed at {path}. Cocos Creator will scan and register it. The current project copy will stay active; reopen the project to switch to the global copy.',
 
   'client.no_targets': 'No client targets available.',
@@ -207,60 +205,40 @@ module.exports = {
   'client.tools_copied': 'Copied tools curl command.',
 
 
-  'skills_manager.title': 'Project Skills',
-  'skills_manager.hint': 'Manage project Skills for the selected client without silently replacing local changes.',
-  'skills_manager.unsupported': 'Automatic Skills installation is not supported for this client yet. Choose a supported client above.',
-  'skills_manager.read_error': 'Unable to read this client’s Skills: {error}',
-  'skills_manager.legacy_path': 'Legacy location: {path}. Updating backs it up and installs to the new location; the original file is retained.',
-  'skills_manager.recommended': 'Built-in Funplay Skills',
-  'skills_manager.installed': 'Installed Project Skills',
-  'skills_manager.install': 'Install Skill',
-  'skills_manager.update': 'Back Up & Update',
-  'skills_manager.current_action': 'Up to Date',
-  'skills_manager.view_changes': 'View Changes',
-  'skills_manager.restore_backup': 'Restore Latest Backup',
-  'skills_manager.reveal': 'Show in Folder',
-  'skills_manager.diff_preview': 'Diff Preview',
-  'skills_manager.status_missing': 'Not Installed',
-  'skills_manager.status_current': 'Up to Date',
-  'skills_manager.status_update_available': 'Update Available',
-  'skills_manager.status_modified': 'Locally Modified',
-  'skills_manager.detail_missing': 'Install built-in template v{latest} to make this guidance available to AI clients.',
-  'skills_manager.detail_current': 'Built-in template v{latest} is installed and has no local changes.',
-  'skills_manager.detail_update_available': 'Template v{installed} can be updated to v{latest}. The installed file will be backed up first.',
-  'skills_manager.detail_modified': 'Local changes were detected. Review the diff before replacing this file with template v{latest}.',
-  'skills_manager.path': 'Skill path: {path}',
-  'skills_manager.latest_backup': '{count} backup(s). Latest: {path}',
-  'skills_manager.no_backup': 'No backups yet.',
-  'skills_manager.no_built_in_skills': 'No built-in project skills are available.',
-  'skills_manager.no_skills': 'No project skills are installed.',
-  'skills_manager.official_badge': 'Built-in',
-  'skills_manager.invalid_format': 'Legacy or invalid SKILL.md frontmatter',
-  'skills_manager.notice_missing': 'The recommended project Skill is not installed. Open Project Skills to install it.',
-  'skills_manager.notice_update': 'A project Skill update is available (v{installed} -> v{latest}). Open Project Skills to review it.',
-  'skills_manager.notice_modified': 'The recommended project Skill has local changes. Open Project Skills to compare or back it up before updating.',
-  'skills_manager.notice_summary': '{count} of {total} built-in project Skill(s) need installation, review, or an update. Open Project Skills to manage them.',
-  'skills_manager.notice_missing_list': 'Not installed ({count}): {names}',
-  'skills_manager.notice_update_list': 'Updates available ({count}): {names}',
-  'skills_manager.notice_modified_list': 'Locally modified ({count}): {names}',
-  'skills_manager.manage': 'Manage Skills',
-  'skills_manager.diff_summary': 'Diff ready: {added} added line(s), {removed} removed line(s).',
-  'skills_manager.already_current': 'This built-in project Skill is already up to date.',
-  'skills_manager.confirm_update_title': 'Update this built-in project Skill?',
-  'skills_manager.confirm_update_body': 'The current file at {path} will be backed up before the latest template replaces it.',
-  'skills_manager.confirm_modified_title': 'Replace this locally modified project Skill?',
-  'skills_manager.confirm_modified_body': 'Local changes at {path} will be backed up, then the latest official template will replace the file. Review the diff first if needed.',
-  'skills_manager.confirm_restore_title': 'Restore the latest project Skill backup?',
-  'skills_manager.confirm_restore_body': 'Restore {path}. The current Skill will also be backed up first.',
-  'skills_manager.create_custom': 'Create Custom Skill',
-  'skills_manager.skill_name': 'Skill name',
-  'skills_manager.skill_name_placeholder': 'scene-qa',
-  'skills_manager.skill_title': 'Title',
-  'skills_manager.skill_title_placeholder': 'Scene QA',
-  'skills_manager.skill_description': 'Trigger description',
-  'skills_manager.skill_instructions': 'Instructions',
-  'skills_manager.create': 'Create Skill',
-  'skills_manager.skill_name_required': 'Skill name is required.',
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   'errors.refresh_failed': 'Refresh failed: {error}',
 };

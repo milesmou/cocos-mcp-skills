@@ -20,7 +20,6 @@ const ZH_TOOL_DESCRIPTIONS = {
   read_project_instruction: '读取 AGENTS.md、CLAUDE.md 或客户端技能目录下的 SKILL.md 等项目 AI 指令文件。',
   write_project_instruction: '在 Cocos 项目内创建或更新项目 AI 指令文件。',
   create_project_skill: '在所选客户端的技能目录创建项目技能，默认使用 Codex 的 .agents/skills。',
-  create_cocos_mcp_project_skill: '为所选客户端创建推荐的 Funplay Cocos MCP 项目工作流技能。',
   set_selection: '设置或清除编辑器中选中的资源或节点。后续编辑器流程依赖选择状态时使用。',
   get_scene_info: '返回当前 Cocos 场景的结构化摘要。多步检查或修改优先使用 execute_javascript；仅需要紧凑场景快照时使用此工具。',
   get_hierarchy: '返回当前场景或指定节点路径下的结构化层级树。复杂推理或修复优先使用 execute_javascript；需要稳定层级快照时使用此工具。',

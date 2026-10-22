@@ -64,7 +64,7 @@ test('extension logging can be muted without suppressing diagnostics or project 
   service.config.enableConsoleLogging = false;
   for (const level of ['info', 'warn', 'error']) service.log(level, `muted ${level}`, { retained: true });
   assert.equal(printed.length, 1);
-  assert.match(printed[0].message, /^\[Funplay Cocos MCP\] visible$/);
+  assert.match(printed[0].message, /^\[Cocos MCP\] visible$/);
   assert.equal(service.runtimeLog.list().length, 4);
   assert.equal(service.runtimeLog.list()[0].details.retained, true);
   targetConsole.log('Project script log');
@@ -131,7 +131,7 @@ test('HTTP server printing switches live for info, warnings and errors while kee
   server.config.enableConsoleLogging = true;
   server.log('info', 'visible again');
   assert.equal(printed.length, 4);
-  assert.match(printed[3].message, /^\[Funplay Cocos MCP Server\]/);
+  assert.match(printed[3].message, /^\[Cocos MCP Server\]/);
 });
 
 test('only Settings has the logging toggle; other pages preserve its saved value', (t) => {
@@ -140,7 +140,7 @@ test('only Settings has the logging toggle; other pages preserve its saved value
   t.after(() => { global.Editor = previousEditor; });
   const definition = createPanel('settings');
   assert.match(definition.template, /id="consoleLoggingInput"/);
-  for (const mode of ['dashboard', 'project-skills', 'tool-exposure']) assert.doesNotMatch(createPanel(mode).template, /id="consoleLoggingInput"/);
+  for (const mode of ['dashboard', 'tool-exposure']) assert.doesNotMatch(createPanel(mode).template, /id="consoleLoggingInput"/);
   const control = { value: false };
   const panel = { ...definition.methods, $: { consoleLoggingInput: control }, state: { config: { enableConsoleLogging: true } } };
   assert.equal(panel.collectConfig().enableConsoleLogging, false);

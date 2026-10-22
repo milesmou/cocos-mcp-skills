@@ -29,10 +29,10 @@ function writeJson(filePath, value) {
 }
 
 function createReleasePackage(root, version) {
-  const packageRoot = path.join(root, 'funplay-cocos-mcp');
+  const packageRoot = path.join(root, 'cocos-mcp-bridge');
   fs.mkdirSync(path.join(packageRoot, 'lib'), { recursive: true });
   writeJson(path.join(packageRoot, 'package.json'), {
-    name: 'funplay-cocos-mcp',
+    name: 'cocos-mcp-bridge',
     version,
     main: 'browser.js',
   });
@@ -42,7 +42,7 @@ function createReleasePackage(root, version) {
 }
 
 function createZip(sourceRoot, zipPath) {
-  const result = childProcess.spawnSync('zip', ['-qr', zipPath, 'funplay-cocos-mcp'], {
+  const result = childProcess.spawnSync('zip', ['-qr', zipPath, 'cocos-mcp-bridge'], {
     cwd: sourceRoot,
     encoding: 'utf8',
   });
@@ -88,8 +88,8 @@ test('extractZip extracts the extension package safely', { skip: hasCommand('zip
     const result = extractZip(zipPath, extractRoot);
 
     assert.equal(result.files > 0, true);
-    assert.equal(fs.existsSync(path.join(extractRoot, 'funplay-cocos-mcp', 'package.json')), true);
-    assert.equal(fs.existsSync(path.join(extractRoot, 'funplay-cocos-mcp', 'browser.js')), true);
+    assert.equal(fs.existsSync(path.join(extractRoot, 'cocos-mcp-bridge', 'package.json')), true);
+    assert.equal(fs.existsSync(path.join(extractRoot, 'cocos-mcp-bridge', 'browser.js')), true);
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
   }
@@ -101,10 +101,10 @@ test('installLatestUpdate downloads, verifies, backs up, and replaces the extens
   const temp = makeTempDir();
   let server = null;
   try {
-    const currentPackage = path.join(temp, 'extensions', 'funplay-cocos-mcp');
+    const currentPackage = path.join(temp, 'extensions', 'cocos-mcp-bridge');
     fs.mkdirSync(currentPackage, { recursive: true });
     writeJson(path.join(currentPackage, 'package.json'), {
-      name: 'funplay-cocos-mcp',
+      name: 'cocos-mcp-bridge',
       version: '0.4.0',
       main: 'browser.js',
     });

@@ -1,15 +1,17 @@
 ---
 name: cocos-skill
-description: 配合 Cocos MCP 完成 Cocos Creator 3.8 的 UI 分析、节点蓝图、资源映射、拼装、美术替换及任务验收，并按工程架构设计业务组件。适用于需要组合工具完成的工程任务；底层场景、节点、组件、资源、动画和截图操作由 MCP 提供。
+description: 配合 Cocos MCP 处理 Cocos Creator 3.8 工程检查、场景与 Prefab 编辑、资源和脚本协作、UI 蓝图和拼装、响应式布局、美术替换、运行时排障、性能分析及验收。适用于需要组合工具完成的工程任务；底层编辑与 DevTools 操作由 MCP 提供。
 ---
 
 # Cocos Creator 工作流
 
-先确认用户指定的工程路径、Creator 版本和目标场景或 Prefab，复用已经打开的编辑器。以 MCP 返回的 UUID、组件类型和资源信息为准，修改后保存并重新读取结果。
+先确认用户指定的工程路径、Creator 版本和目标场景或 Prefab。通过 Codex 侧 MCP 检查工程桥接；已有可用连接时复用编辑器，缺少插件时按连接结果提示用户重启。以 MCP 返回的 UUID、组件类型和资源信息为准，修改后保存并重新读取结果。
 
 ## 执行入口
 
-在线任务先读 [MCP 协作流程](modules/mcp-workflow.md)，使用已连接的 `cocos-mcp` 工具。底层操作参数与桥接安装统一查阅 MCP 自带文档或运行时 schema，不在技能中维护第二套 API 手册。
+在线任务先读 [MCP 协作流程](modules/mcp-workflow.md)，调用 `connect_cocos_project` 并传入目标工程绝对路径。它会安装缺失的工程桥接插件；返回 `restart_required` 时，提示用户保存并完全重启该工程的 Creator，等待用户完成后再次连接。只有 `connected: true` 才能进行编辑操作，不自动关闭或重启用户的编辑器。
+
+Codex 侧 MCP 可以在 Creator 未启动时工作。工具参数、桥接安装和服务实现统一查阅 MCP 自带文档或运行时 schema，技能不提供另一套安装脚本。
 
 ## 按任务加载
 
@@ -19,7 +21,12 @@ description: 配合 Cocos MCP 完成 Cocos Creator 3.8 的 UI 分析、节点蓝
 | --- | --- |
 | 确认工程、选择工具、组织修改步骤 | [MCP 协作流程](modules/mcp-workflow.md) |
 | UI 分析、蓝图、拼装与美术替换 | [UI](modules/assemble-cocos-ui.md) |
+| 资源导入、脚本/预览就绪、真实输入与保存证据 | [工程就绪](references/project-readiness.md) |
+| Widget/Layout、SafeArea、滚动、组件属性归属与动画 | [UI 组件规则](references/assemble-cocos-ui/ui-rules.md) |
+| SpriteFrame、九宫格与导入器修改 | [切图与导入](references/assemble-cocos-ui/art-slicing.md) |
+| 字体、溢出、缺字和用户要求的本地化 | [字体与本地化](references/assemble-cocos-ui/text-and-localization.md) |
 | 根据修改范围组合检查、判断证据与验收结论 | [验收与离线结构检查](modules/validate-cocos-content.md) |
+| Chrome 预览异常、网络排障、卡顿与内存分析 | [运行时排障与性能分析](modules/analyze-runtime-performance.md) |
 | cookMachine 架构下的章节专用业务逻辑 | [项目专用示例](modules/create-special-cook-machine.md) |
 
 只有目标工程实际采用 `cookMachine` / `cocos3-toolkit` 架构且任务涉及章节烹饪设备时，读取 [项目专用示例](modules/create-special-cook-machine.md)。MyCookingGirl 的 UI 参考也仅在对应项目结构中使用，不作为其他工程的默认结构。

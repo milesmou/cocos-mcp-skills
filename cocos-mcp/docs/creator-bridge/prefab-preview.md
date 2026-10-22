@@ -6,7 +6,7 @@
 
 ## 真实 PNG
 
-1. 按 [桥接安装](README.md) 安装或更新 `cocos3-codex-bridge` 扩展 1.2.0 或更高版本后，调用 Creator 顶部菜单 `开发者 -> 重新加载`，等待桥接重新就绪。
+1. 按 [桥接安装](README.md) 安装或更新 `cocos-mcp-bridge` 统一扩展后，提示用户保存并重启 Creator，再次连接确认就绪。
 2. 等待编辑器和 AssetDB 就绪。
 3. 使用 `db://assets/...` URL 或 Prefab UUID 导出：
 

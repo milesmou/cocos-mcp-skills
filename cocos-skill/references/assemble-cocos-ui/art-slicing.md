@@ -40,3 +40,12 @@ SpriteFrame 绑定后再次设置并核对 `UITransform.contentSize`、锚点、
 验收顺序固定为：制作前确定尺寸并记录规格 → 按规格制作和输出 → 核对 PNG 实际尺寸 → 导入 Creator → 复查 SpriteFrame 与节点 → 检查显示、旋转/拼接和交互。
 
 真实渲染前至少核对制作前规定的正式尺寸、实际 PNG 文件尺寸、来源切片矩形、导入 SpriteFrame 的原始画布与 trim 信息，以及设计分辨率下的 UITransform 尺寸。正式 PNG 必须符合制作前的规格；其余映射必须能由已记录的裁切和缩放方案解释。仅有 UITransform 尺寸正确或结构校验通过不能视为尺寸验收通过。预览中出现被裁切、拉伸、透明留白异常、文字与底板错位或点击热区偏移时，先修复切片契约，再继续拼装和像素比较。
+
+## SpriteFrame 导入与九宫格
+
+- 先确定原图、所属 `.meta` 与实际 SpriteFrame 子资源 UUID；Texture、ImageAsset 和 SpriteFrame 不是同一资产，不推算或拼造子资源 UUID。
+- 检查像素尺寸、rect、trim、旋转、cap inset、Sprite 类型、sizeMode 和 UITransform。要保留指定布局尺寸时先选择 CUSTOM，再绑定 SpriteFrame，最后回读尺寸，不让 RAW 自动尺寸覆盖设计。
+- 九宫格 inset 使用原图坐标，左右/上下之和必须落在源 rect 内；在目标大小检查边角和边框。不能用降采样截图推导导入器坐标。
+- 优先使用编辑器导入接口。确需局部修改 `.meta` 时保留无关设置、UUID、submeta 映射和图集引用，刷新精确源文件后验证，不重建或复制 `.meta`。
+- 改图集归属、trim 或切分方式可能影响动画、嵌套 Prefab 和材质批次；先查使用方。无法保持身份时说明限制，不靠同名重建引用。
+- 导入身份就绪、SpriteFrame 实际属性和已保存组件绑定分别核验。材质/纹理合批须保留绘制顺序，编辑态节点计数不作为运行时 GPU 或 Draw Call 证据。

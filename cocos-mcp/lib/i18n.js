@@ -2,7 +2,7 @@
 
 const DEFAULT_LANGUAGE = 'en';
 const LANGUAGE_PREFERENCES = new Set(['auto', 'en', 'zh']);
-const TRANSLATION_KEY = 'funplay-cocos-mcp.language_code';
+const TRANSLATION_KEY = 'cocos-mcp-bridge.language_code';
 
 function normalizeLanguagePreference(value) {
   const normalized = String(value || '').trim().toLowerCase();

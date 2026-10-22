@@ -2,14 +2,14 @@
 
 优先使用 MCP 的预览截图；本文记录可选认证桥接的普通 Web `GameCanvas` 捕捉方式，需要先按 [桥接安装](README.md) 配置连接。
 
-复用 `cocos3-codex-bridge` 本机桥接和项目 `preview-template`，只捕捉开发人员当前正在操作的普通 Web 预览，不启动第二个浏览器。
+复用 `cocos-mcp-bridge` 本机桥接和项目 `preview-template`，只捕捉开发人员当前正在操作的普通 Web 预览，不启动第二个浏览器。
 
 命令中的 `<MCP目录>` 是本地服务目录的绝对路径，`<工程目录>` 是目标 Cocos 工程绝对路径；替换占位符并保留引号，不依赖当前工作目录。
 
 ## 工作流
 
 1. 读取并遵循 [认证桥接](README.md) 和 [运行时节点统计](runtime-node-stats.md)。
-2. 执行 `status`，要求 `runtimeInspector.screenshotPng` 为 `true` 且 `runtimeInspector.connectedInstances` 恰好为 `1`。能力字段缺失时调用 Creator 顶部菜单 `开发者 -> 重新加载` 并等待桥接重新就绪；没有连接时刷新现有 Web 预览；多个连接时关闭多余预览，禁止猜测目标实例。
+2. 执行 `status`，要求 `runtimeInspector.screenshotPng` 为 `true` 且 `runtimeInspector.connectedInstances` 恰好为 `1`。能力字段缺失时确认插件版本；若刚安装或更新插件，提示用户保存并重启 Creator 后重新连接。没有 Web 预览连接时刷新现有预览；多个连接时关闭多余预览，禁止猜测目标实例。
 3. 将截图保存到工程 `temp/capture-cocos-runtime/` 下的 `.png` 路径：
 
    ```powershell

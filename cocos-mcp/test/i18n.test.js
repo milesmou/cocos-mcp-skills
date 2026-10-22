@@ -53,7 +53,7 @@ test('panel and package localization references exist in both dictionaries', () 
   let templates;
   try {
     global.Editor = { Panel: { define: (definition) => definition } };
-    templates = ['dashboard', 'tool-exposure', 'settings', 'project-skills']
+    templates = ['dashboard', 'tool-exposure', 'settings']
       .map((mode) => createPanel(mode).template).join('\n');
   } finally {
     global.Editor = previousEditor;
@@ -63,7 +63,7 @@ test('panel and package localization references exist in both dictionaries', () 
     ...panelSource.matchAll(/this\.t\('([^']+)'/g),
   ].map((match) => match[1]);
   const packageSource = fs.readFileSync(require.resolve('../package.json'), 'utf8');
-  const packageKeys = [...packageSource.matchAll(/i18n:funplay-cocos-mcp\.([A-Za-z0-9_]+)/g)]
+  const packageKeys = [...packageSource.matchAll(/i18n:cocos-mcp-bridge\.([A-Za-z0-9_]+)/g)]
     .map((match) => match[1]);
 
   for (const key of new Set([...panelKeys, ...packageKeys])) {

@@ -6,16 +6,22 @@
 
 现有目录职责如下；新增功能沿用相应边界：
 
-- `cocos-mcp/`：基于 Funplay 的 MCP 服务、编辑器扩展、测试及服务文档。内部扩展标识保留为 `funplay-cocos-mcp`；`compat/creator-bridge/` 存放来自 cocos3-skill 的可选认证桥接、CLI 和对应测试，桥接标识为 `cocos3-codex-bridge`。底层操作与桥接文档统一维护在 `docs/`，服务运行代码不放在技能目录。
+- `cocos-mcp/`：基于 Funplay 的服务与工程桥接。`bin/cocos-mcp.js` 是安装到 Codex 的默认本地 MCP 入口，编辑器未启动时也可初始化；`connect_cocos_project` 负责检查、安装缺失插件与连接。工程内唯一扩展标识为 `cocos-mcp-bridge`；`lib/creator-bridge/` 存放认证 HTTP、运行时中继和场景辅助实现，`panel/prefab-preview.js` 保留内部 Prefab 渲染。`compat/creator-bridge/` 仅保留兼容 CLI 和测试，不另装插件。底层操作与桥接文档统一维护在 `docs/`，服务运行代码不放在技能目录。
 - `cocos-skill/`：面向 Cocos Creator 3.8.x 的统一技能，唯一入口为该目录下的 `SKILL.md`。`modules/` 仅维护 MCP 协作、UI 拼装、任务验收和项目专用业务设计；`references/` 保存 UI 参考，`scripts/` 只保留 MCP 未覆盖的离线对象表检查、图片图册与比较。不要重新添加场景、节点、组件、资源、动画、预览或截图等重复操作模块及脚本。
 
-在仓库根目录使用 `npm --prefix cocos-mcp run check`、`npm --prefix cocos-mcp run check:compat`、`npm --prefix cocos-mcp test` 和 `npm --prefix cocos-mcp run docs:check` 检查服务；使用 `npm --prefix cocos-skill run check` 与 `npm --prefix cocos-skill test` 检查技能脚本。根目录没有 npm 工程，不在此直接执行 `npm install` 或假设存在构建命令。
+`scripts/install-codex.js` 注册 Codex 本地服务并链接用户级技能，使用源码目录作为安装来源，不将工程路径写死到全局配置。安装器不得覆盖同名用户技能或其他 MCP 配置。
+
+在仓库根目录使用 `npm --prefix cocos-mcp run check`、`npm --prefix cocos-mcp run check:codex`、`npm --prefix cocos-mcp run check:compat`、`npm --prefix cocos-mcp test` 和 `npm --prefix cocos-mcp run docs:check` 检查服务；使用 `npm --prefix cocos-skill run check` 与 `npm --prefix cocos-skill test` 检查技能脚本。根目录没有 npm 工程，不在此直接执行 `npm install` 或假设存在构建命令。
 
 上游提交与许可边界见 `UPSTREAM.md`。更新时合并源代码，不直接覆盖整合目录；保留 Funplay 的 MIT 声明，不将其授权扩展到没有独立 LICENSE 的 cocos3-skill 内容。当前为本地源码分发，禁止通过服务面板下载上游发布包替换整合版。
 
 每个技能目录只维护一个技能入口，不再嵌套同名技能目录，不将内部模块单独注册为技能。新增或调整能力时，同步更新技能入口中的模块索引和适用范围。
 
-在线任务先阅读 `cocos-skill/modules/mcp-workflow.md`。通用操作使用 MCP；执行上下文见 `cocos-mcp/docs/EDITOR_WORKFLOW.md`，可选桥接的安装、CLI 和 API 见 `cocos-mcp/docs/creator-bridge/`。MyCookingGirl / cookMachine 示例仅在目标工程采用对应架构时加载，不作为所有工程的约定。
+在线任务先阅读 `cocos-skill/modules/mcp-workflow.md`。通用操作使用 MCP；执行上下文见 `cocos-mcp/docs/EDITOR_WORKFLOW.md`，桥接辅助能力的安装、CLI 和 API 见 `cocos-mcp/docs/creator-bridge/`。MyCookingGirl / cookMachine 示例仅在目标工程采用对应架构时加载，不作为所有工程的约定。
+
+首次连接工程时由 MCP 安装缺失桥接，返回 `restart_required` 后提示用户保存并完全重启 Creator；不自动关闭编辑器，不将安装完成当作连接就绪。重启后再次连接并核对工程身份，仅在 `connected: true` 时编辑；已有同名插件不自动覆盖。旧 `funplay-cocos-mcp` / `cocos3-codex-bridge` 通过显式 `migrateLegacy: true` 迁移，完整备份后移出 extensions；迁移后必须重启。旧文档的“重新加载代替重启”规则不适用于这一默认安装流程。
+
+默认将 `cocos-mcp/preview-template/` 与统一桥接一起安装到目标工程，保留工程自定义 EJS，受管理的脚本升级前备份，遇到未知脚本修改时报告冲突。实际游戏数据通过 `execute_javascript` 的 `context: "runtime"` 查询；`scene` 指编辑器场景进程。多预览明确选择实例，模板更新后刷新原预览，执行超时不自动重放。
 
 文档和脚本中的仓库内部路径相对仓库根目录或所在文件解析，明确各自基准。待编辑的 Cocos Creator 工程以用户指定路径为准，不将本仓库当作默认游戏工程，也不写死个人机器上的工程路径。
 

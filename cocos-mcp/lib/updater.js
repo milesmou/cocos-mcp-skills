@@ -9,7 +9,7 @@ const path = require('path');
 const zlib = require('zlib');
 const { compareVersions, normalizeVersion, selectReleaseAssets } = require('./update-checker');
 
-const PACKAGE_NAME = 'funplay-cocos-mcp';
+const PACKAGE_NAME = 'cocos-mcp-bridge';
 const MAX_REDIRECTS = 5;
 const DEFAULT_TIMEOUT_MS = 30000;
 const DEFAULT_MAX_DOWNLOAD_BYTES = 64 * 1024 * 1024;
@@ -180,7 +180,7 @@ function requestUrl(url, options = {}, redirectCount = 0) {
       parsed,
       {
         headers: {
-          'User-Agent': 'funplay-cocos-mcp-updater',
+          'User-Agent': 'cocos-mcp-bridge-updater',
           Accept: '*/*',
         },
         timeout: options.timeoutMs || DEFAULT_TIMEOUT_MS,
@@ -401,7 +401,7 @@ async function installLatestUpdate(options = {}) {
     throw new Error('Latest release does not include SHA256SUMS.txt, so one-click update was refused.');
   }
 
-  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'funplay-cocos-mcp-update-'));
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cocos-mcp-bridge-update-'));
   const downloadDir = path.join(tempRoot, 'downloads');
   const extractDir = path.join(tempRoot, 'extract');
   fs.mkdirSync(downloadDir, { recursive: true });
@@ -441,7 +441,7 @@ async function installLatestUpdate(options = {}) {
     assertInstallablePackagePath(packagePath, options);
 
     if (packagePathExisted) {
-      const backupRoot = path.join(path.dirname(packagePath), '.funplay-cocos-mcp-backups');
+      const backupRoot = path.join(path.dirname(packagePath), '.cocos-mcp-bridge-backups');
       backupDir = path.join(backupRoot, `${path.basename(packagePath)}-${timestampForPath()}`);
       fs.mkdirSync(backupRoot, { recursive: true });
       copyDirectoryContents(packagePath, backupDir);
