@@ -6,7 +6,7 @@
 
 1. 先调用 `connect_cocos_project` 并传入工程绝对路径，服务检查并安装缺失桥接。返回 `restart_required` 时提示用户保存并重启 Creator，等待完成后按原参数再次连接；只有 `connected: true` 才继续。安装与连接状态见 [CODEX_SETUP.md](CODEX_SETUP.md)。
 2. 通过已连接 MCP 的 `get_project_info`、`get_editor_state` 确认工程路径、Creator 版本、当前场景与连接状态。路径与用户目标不一致时先定位正确连接，不操作另一个工程。
-3. 使用 `get_tool_catalog` 和客户端实际暴露的 schema 确认工具与参数。默认 `core` 提供聚焦的工具集，`full` 包含更多修改工具；不要假定所有工具都已暴露，也不要绕过禁用设置。
+3. 使用 `get_tool_catalog` 和客户端实际暴露的 schema 确认工具与参数。当前默认开放全部 105 个编辑器工具；仍需根据实际 schema 及目标 Creator 版本选择参数。
 4. 通过 `get_hierarchy`、`get_scene_info`、`inspect_prefab`、`inspect_asset` 等读取当前事实。修改前记录目标 UUID、属性和需要恢复的上下文。
 
 ## 编辑器消息与原 CLI 的对应关系
@@ -67,18 +67,18 @@
 | 任务 | 工具或执行路径 |
 | --- | --- |
 | 场景查询与打开 | `list_scenes`、`open_scene`、`get_scene_info` |
-| 节点和组件 | `get_hierarchy`；`full` 中的 `create_node`、`set_node_transform`、`add_component`、`set_component_property`，或 Editor 消息 |
-| Prefab | `inspect_prefab`、`inspect_prefab_instance`、`validate_prefab_references`；`full` 中的 `create_prefab_instance`、`apply_prefab_instance`、`revert_prefab_instance` |
+| 节点和组件 | `get_hierarchy`；`create_node`、`set_node_transform`、`add_component`、`set_component_property`，或 Editor 消息 |
+| Prefab | `inspect_prefab`、`inspect_prefab_instance`、`validate_prefab_references`；`create_prefab_instance`、`apply_prefab_instance`、`revert_prefab_instance` |
 | 资源 | `list_assets`、`inspect_asset`、`inspect_asset_dependencies`、`validate_asset_dependencies`；写入通过 AssetDB 消息或已暴露工具 |
 | 脚本 | AssetDB 创建或导入；`run_script_diagnostics`、`get_script_diagnostic_context` 检查编译诊断 |
-| 动画与事件 | `full` 中的 `list_animations`、`play_animation`、`bind_button_click_event`；复杂编辑使用对应版本的 Editor 消息，或已安装的桥接辅助方法 |
-| 预览与截图 | `get_preview_mode`、`get_runtime_state`、`capture_preview_screenshot`、`capture_scene_screenshot`；`full` 中的 `run_project_preview` |
-| 构建 | `get_build_status`；`full` 中的 `open_build_panel`。当前没有通用“一键构建”工具，不把打开构建面板描述为构建完成 |
+| 动画与事件 | `list_animations`、`play_animation`、`bind_button_click_event`；复杂编辑使用对应版本的 Editor 消息，或已安装的桥接辅助方法 |
+| 预览与截图 | `get_preview_mode`、`get_runtime_state`、`capture_preview_screenshot`、`capture_scene_screenshot`；`run_project_preview` |
+| 构建 | `get_build_status`；`open_build_panel`。当前没有通用“一键构建”工具，不把打开构建面板描述为构建完成 |
 | 验证 | `validate_scene`、引用验证、脚本诊断及 `get_recent_logs`，按任务组合 |
 
 `context: "scene"` 的脚本针对编辑器当前场景上下文。真实游戏预览的截图与状态使用预览工具；不能通过编辑场景里的 `director` 结果证明 Web 预览已生效。
 
-## 桥接辅助能力辅助方法
+## 桥接辅助方法
 
 只有细粒度 dump/动画管理、内部 Prefab 预览或原运行时中继等能力确实需要时，才加载 [认证桥接安装与调用](creator-bridge/README.md)。桥接有独立的连接文件和令牌，不能将它的端口当作 MCP URL。
 

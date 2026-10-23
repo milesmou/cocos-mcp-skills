@@ -61,7 +61,7 @@ codex mcp add cocos-mcp -- node "<MCP目录>/bin/cocos-mcp.js"
 | `editor_unavailable` | 插件存在但未能连接，需打开正确工程或检查启用状态 |
 | `ready` | 已验证目标工程身份，可调用编辑器工具 |
 
-默认 `core` 入口提供 2 个连接工具、1 个 `cocos_devtools` 入口及上游 39 个编辑器工具，列表在编辑器启动前后保持稳定。引擎侧的工具 profile 和禁用设置仍有效。需要更大工具面时，可将 Codex 配置中的启动参数改为 `["<MCP目录>/bin/cocos-mcp.js", "--profile", "full"]`；引擎侧也需暴露相应工具。
+Codex 默认开放全部 108 个工具：2 个连接工具、1 个 `cocos_devtools` 入口和全部 105 个编辑器工具。工具列表在 Creator 启动前后保持稳定；执行编辑操作仍需先连接正确工程。旧 `--profile core|full` 参数仅兼容解析，不再限制开放范围。
 
 切换工程时重新调用 `connect_cocos_project`，失败时会清除旧工程的写入连接。连接中断不会自动重放写入，因为编辑器可能已经执行了该操作；重新连接后先核对现场。
 
@@ -79,8 +79,10 @@ codex mcp add cocos-mcp -- node "<MCP目录>/bin/cocos-mcp.js"
 
 完整旧插件移入工程 `temp/cocos-mcp-install/bridge-<ID>/extensions/`，保留本地修改，再安装单一插件；返回 `migration.backupDirectory` 和 `restart_required`。保存并完全重启 Creator 后再次连接。现有 `cocos-mcp-bridge` 不自动覆盖；手动升级使用安装器 `--force`，同样先备份。
 
-原 `bin/funplay-cocos-mcp.js --url ...` HTTP 代理继续保留。旧 `funplay-cocos-mcp.config.json` 可读取，新设置保存到 `cocos-mcp-bridge.config.json`；工程身份算法和派生端口保持不变。认证描述文件改为 `temp/cocos-mcp-bridge.json`，旧文件不会被作为新桥接就绪证据。
+原 `bin/funplay-cocos-mcp.js --url ...` HTTP 代理继续保留。工程桥接使用固定默认值：自动启动、本机回环监听、按工程路径派生端口、全部工具开放。旧 `funplay-cocos-mcp.config.json`、`cocos-mcp-bridge.config.json` 与 `COCOS_MCP_*` 环境覆盖不再读取，原文件保留；工程身份算法和派生端口保持不变。认证描述文件改为 `temp/cocos-mcp-bridge.json`，旧文件不会被作为新桥接就绪证据。
 
 ## Chrome DevTools
 
 需要控制台、网络、性能录制及堆分析时，执行 `node scripts/install-codex.js --devtools`，并在 Chrome 中授权连接。入口仍为 `cocos-mcp`，通过 `cocos_devtools` 使用可选运行时，详见 [Chrome DevTools](DEVTOOLS.md)。
+
+Creator 不再注册 MCP 服务、工具开放范围或 MCP 设置菜单，也不提供配置面板。内部 Prefab 渲染面板由工具按需打开。默认保持 JavaScript 安全检查，不因工具全部开放而跳过工程身份与参数校验。修改 Codex 入口后重新连接 MCP 以加载完整工具列表；更新工程扩展后保存并完全重启 Creator。

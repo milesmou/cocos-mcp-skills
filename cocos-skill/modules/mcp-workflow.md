@@ -37,7 +37,7 @@
 
 Chrome 控制台、网络、时间线和堆分析使用 `cocos_devtools`，按 [运行时排障与性能分析](analyze-runtime-performance.md) 组织复现、采样和对比。先取得实际 `pageId`，保持同一会话完成采样，不以连接成功代替优化验收。
 
-- 服务随附的 [工具手册](../../cocos-mcp/docs/TOOLS.md)：底层能力与 profile；实际参数以当前连接的 schema 为准。
+- 服务随附的 [工具手册](../../cocos-mcp/docs/TOOLS.md)：全部默认开放的底层能力；实际参数以当前连接的 schema 为准。
 - [编辑器执行说明](../../cocos-mcp/docs/EDITOR_WORKFLOW.md)：`execute_javascript` 的上下文和 Editor 消息调用。
 - [桥接辅助能力](../../cocos-mcp/docs/creator-bridge/README.md)：原场景辅助方法、内部 Prefab PNG 和 Web 预览中继。
 

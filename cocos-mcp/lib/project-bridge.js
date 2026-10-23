@@ -10,7 +10,7 @@ const { CONNECTION_FILE } = require('./connection-file');
 const { installPreviewTemplate } = require('./preview-template');
 const { requestCompatibilityBridge } = require('./runtime-client');
 
-const RUNTIME_FILES = ['package.json', 'browser.js', 'scene.js', 'lib', 'panel', 'i18n', 'bin', 'LICENSE', 'NOTICE.md'];
+const RUNTIME_FILES = ['package.json', 'browser.js', 'scene.js', 'lib', 'panel', 'bin', 'LICENSE', 'NOTICE.md'];
 
 function readProject(projectPath) {
   if (typeof projectPath !== 'string' || !path.isAbsolute(projectPath)) throw new Error('projectPath must be an absolute Cocos Creator project path.');

@@ -33,7 +33,7 @@ function toolResult(data, isError = false) {
 }
 
 class CodexGateway {
-  constructor({ sourceRoot = path.resolve(__dirname, '..'), profile = 'core', devtoolsOptions = {} } = {}) {
+  constructor({ sourceRoot = path.resolve(__dirname, '..'), devtoolsOptions = {} } = {}) {
     this.sourceRoot = sourceRoot;
     this.project = null;
     this.connection = null;
@@ -41,7 +41,7 @@ class CodexGateway {
     this.devtools = new CocosDevtools({ ...devtoolsOptions, getProject: () => this.project });
     this.state = { status: 'disconnected', connected: false, message: '请先调用 connect_cocos_project 指定目标 Cocos Creator 工程。' };
     this.tools = createToolRegistry({
-      getRuntimeContext: () => ({ config: { toolProfile: profile }, projectPath: sourceRoot, version: manifest.version }),
+      getRuntimeContext: () => ({ config: { toolProfile: 'full' }, projectPath: sourceRoot, version: manifest.version }),
       interactionLog: { add() {} }, runtimeLog: { add() {}, list: () => [] },
       sceneBridge: { call: async () => { throw new Error('Connect a project first.'); } },
     }).listTools();

@@ -18,21 +18,14 @@ function fixture(t) {
 }
 const config = (projectPath, port = 23456) => ({ projectPath, host: '127.0.0.1', port });
 
-test('new projects get deterministic ports; old files and explicit environment overrides keep their endpoints', (t) => {
+test('default ports remain project-derived despite legacy files and environment settings', (t) => {
   const { projectPath } = fixture(t);
-  const initial = loadConfig({ projectPath, env: {} });
+  const initial = loadConfig({ projectPath });
   assert.equal(initial.port, getProjectPort(projectPath));
   assert.ok(initial.port >= 20000 && initial.port < 30000);
-  assert.equal(initial.portMode, 'project');
-  assert.equal(loadConfig({ projectPath, env: {} }).port, initial.port);
-  const file = path.join(projectPath, 'funplay-cocos-mcp.config.json');
-  for (const [saved, port] of [[{}, 8765], [{ port: 9100 }, 9100], [{ portMode: 'project', port: 9100 }, initial.port]]) {
-    fs.writeFileSync(file, JSON.stringify(saved));
-    assert.equal(loadConfig({ projectPath, env: {} }).port, port);
-  }
-  const overridden = loadConfig({ projectPath, env: { COCOS_MCP_PORT: '9500' } });
-  assert.equal(overridden.port, 9500);
-  assert.equal(overridden.portMode, 'fixed');
+  fs.writeFileSync(path.join(projectPath, 'funplay-cocos-mcp.config.json'), JSON.stringify({ port: 9100, toolProfile: 'core' }));
+  assert.equal(loadConfig({ projectPath, env: { COCOS_MCP_PORT: '9500' } }).port, initial.port);
+  assert.equal(loadConfig({ projectPath }).portMode, 'project');
 });
 
 test('project keys are stable, short, ASCII-safe and distinct for same-name project folders', (t) => {

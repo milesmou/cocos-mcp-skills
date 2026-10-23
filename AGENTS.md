@@ -6,7 +6,7 @@
 
 现有目录职责如下；新增功能沿用相应边界：
 
-- `cocos-mcp/`：基于 Funplay 的服务与工程桥接。`bin/cocos-mcp.js` 是安装到 Codex 的默认本地 MCP 入口，编辑器未启动时也可初始化；`connect_cocos_project` 负责检查、安装缺失插件与连接。工程内唯一扩展标识为 `cocos-mcp-bridge`；`lib/creator-bridge/` 存放认证 HTTP、运行时中继和场景辅助实现，`panel/prefab-preview.js` 保留内部 Prefab 渲染。`compat/creator-bridge/` 仅保留兼容 CLI 和测试，不另装插件。底层操作与桥接文档统一维护在 `docs/`，服务运行代码不放在技能目录。
+- `cocos-mcp/`：基于 Funplay 的服务与工程桥接。`bin/cocos-mcp.js` 是安装到 Codex 的默认本地 MCP 入口，编辑器未启动时也可初始化；`connect_cocos_project` 负责检查、安装缺失插件与连接。工程内唯一扩展标识为 `cocos-mcp-bridge`；`lib/creator-bridge/` 存放认证 HTTP、运行时中继和场景辅助实现，`panel/prefab-preview.js` 保留内部 Prefab 渲染。`compat/creator-bridge/` 仅保留兼容 CLI 和测试，不另装插件。工程桥接无管理菜单和配置面板，自动启动并采用固定默认值；Codex 默认开放全部 108 个工具，工程侧开放全部 105 个编辑器工具。忽略旧工程配置文件和环境覆盖，保留 JavaScript 安全检查。底层操作与桥接文档统一维护在 `docs/`，服务运行代码不放在技能目录。
 - `cocos-skill/`：面向 Cocos Creator 3.8.x 的统一技能，唯一入口为该目录下的 `SKILL.md`。`modules/` 仅维护通用 MCP 协作、UI 拼装、运行时分析和任务验收；`references/` 保存通用 UI 参考，`scripts/` 只保留 MCP 未覆盖的离线对象表检查、图片图册与比较。不要重新添加场景、节点、组件、资源、动画、预览或截图等重复操作模块及脚本。
 - `docs/project-agents/`：保存供迁入目标工程的项目 AGENTS 文档。项目专用组件、默认参数、命名、资源路径和业务架构规则随目标工程维护，不由通用技能自动加载，不覆盖目标工程已有 `AGENTS.md`。
 

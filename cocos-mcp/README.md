@@ -12,6 +12,8 @@ node scripts/install-codex.js
 
 Codex 服务名为 `cocos-mcp`，入口是 `bin/cocos-mcp.js`；工程内唯一插件为 `cocos-mcp-bridge`，包含 MCP、认证辅助方法、Prefab 渲染和 Web 预览中继。
 
+桥接随 Creator 自动启动，使用默认配置并开放全部工具，无需编辑器菜单或设置面板。
+
 调用 `connect_cocos_project` 并传入工程绝对路径。缺少插件时自动安装桥接与预览模板，返回 `restart_required`；保存并完全重启 Creator 后再次连接，确认 `connected: true` 再编辑。
 
 已有同名插件不自动覆盖。旧 `funplay-cocos-mcp` / `cocos3-codex-bridge` 使用 `migrateLegacy: true` 迁移，完整备份后移出扩展目录。详细流程见 [安装与迁移](docs/CODEX_SETUP.md)。

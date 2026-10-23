@@ -1,43 +1,16 @@
 'use strict';
 
 const crypto = require('crypto');
-const fs = require('fs');
 const path = require('path');
-const { normalizeLanguagePreference } = require('./i18n');
-const { normalizeSavedToolProfiles } = require('./tool-profiles');
 
-const DEFAULTS = {
-  host: '127.0.0.1',
-  port: 8765,
-  portMode: 'project',
-  toolProfile: 'core',
-  enabledTools: [],
-  disabledTools: [],
-  enabledToolCategories: [],
-  disabledToolCategories: [],
-  enableSessions: false,
-  enableConsoleLogging: true,
-  executeJavascriptSafetyChecks: true,
-  autostart: true,
-  maxInteractionLogEntries: 50,
-  lastClientTargetId: 'claude_code',
-  activeToolProfileName: '',
-  savedToolProfiles: [],
-  language: 'auto',
-};
-
-const RUNTIME_CONFIG_KEYS = [
-  'host',
-  'port',
-  'toolProfile',
-  'enabledTools',
-  'disabledTools',
-  'enabledToolCategories',
-  'disabledToolCategories',
-  'enableSessions',
-  'executeJavascriptSafetyChecks',
-  'maxInteractionLogEntries',
-];
+/** Fixed bridge defaults; project files and environment variables cannot hide tools. */
+const DEFAULTS = Object.freeze({
+  host: '127.0.0.1', port: 8765, portMode: 'project', toolProfile: 'full',
+  enabledTools: Object.freeze([]), disabledTools: Object.freeze([]),
+  enabledToolCategories: Object.freeze([]), disabledToolCategories: Object.freeze([]),
+  enableSessions: false, enableConsoleLogging: true, executeJavascriptSafetyChecks: true,
+  autostart: true, maxInteractionLogEntries: 50,
+});
 
 function getProjectPath() {
   if (global.Editor && Editor.Project && typeof Editor.Project.path === 'string' && Editor.Project.path) {
@@ -79,119 +52,13 @@ function getCocosVersion() {
   return 'unknown';
 }
 
-function loadJson(filePath) {
-  if (!fs.existsSync(filePath)) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  } catch (error) {
-    return {
-      __error: `Failed to parse config file '${filePath}': ${error.message}`,
-    };
-  }
-}
-
-function clampPort(value) {
-  const port = Number(value);
-  if (!Number.isInteger(port) || port <= 0 || port > 65535) {
-    return DEFAULTS.port;
-  }
-  return port;
-}
-
-function normalizeProfile(value) {
-  const normalized = String(value || DEFAULTS.toolProfile).toLowerCase();
-  if (normalized === 'full' || normalized === 'custom') {
-    return normalized;
-  }
-  return 'core';
-}
-
-function normalizeStringList(value) {
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => String(item || '').trim())
-      .filter(Boolean);
-  }
-  if (typeof value === 'string') {
-    return value
-      .split(/[\n,]/)
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-  return [];
-}
-
-function normalizeClientTargetId(value) {
-  const normalized = String(value || '').trim();
-  return normalized || DEFAULTS.lastClientTargetId;
-}
-
-function hasRuntimeConfigChanges(currentConfig = {}, nextConfig = {}) {
-  return RUNTIME_CONFIG_KEYS.some((key) => (
-    JSON.stringify(currentConfig[key]) !== JSON.stringify(nextConfig[key])
-  ));
-}
-
+/** Build a fresh configuration using the selected project's stable loopback port. */
 function loadConfig(options = {}) {
   const projectPath = options.projectPath || getProjectPath();
-  const env = options.env || process.env;
-  const configPath = path.join(projectPath, 'cocos-mcp-bridge.config.json');
-  // Read legacy settings without changing project identity or its derived port.
-  const legacyPath = path.join(projectPath, 'funplay-cocos-mcp.config.json');
-  const settingsPath = fs.existsSync(configPath) ? configPath : legacyPath;
-  const fileConfig = loadJson(settingsPath) || {};
-  // Existing config files without a mode retain their old fixed endpoint.
-  const portMode = fileConfig.portMode === 'project' || (!fs.existsSync(settingsPath) && !env.COCOS_MCP_PORT)
-    ? 'project' : 'fixed';
-  const port = clampPort(env.COCOS_MCP_PORT || (portMode === 'project' ? getProjectPort(projectPath) : fileConfig.port || DEFAULTS.port));
-
-  return {
-    ...DEFAULTS,
-    ...fileConfig,
-    host: env.COCOS_MCP_HOST || fileConfig.host || DEFAULTS.host,
-    port,
-    portMode: env.COCOS_MCP_PORT ? 'fixed' : portMode,
-    projectPath,
-    clientConfigEntries: fileConfig.clientConfigEntries && typeof fileConfig.clientConfigEntries === 'object' && !Array.isArray(fileConfig.clientConfigEntries)
-      ? fileConfig.clientConfigEntries : {},
-    toolProfile: normalizeProfile(process.env.COCOS_MCP_PROFILE || fileConfig.toolProfile || DEFAULTS.toolProfile),
-    enabledTools: normalizeStringList(fileConfig.enabledTools),
-    disabledTools: normalizeStringList(fileConfig.disabledTools),
-    enabledToolCategories: normalizeStringList(fileConfig.enabledToolCategories).map((item) => item.toLowerCase()),
-    disabledToolCategories: normalizeStringList(fileConfig.disabledToolCategories).map((item) => item.toLowerCase()),
-    enableSessions: typeof fileConfig.enableSessions === 'boolean' ? fileConfig.enableSessions : DEFAULTS.enableSessions,
-    enableConsoleLogging: typeof fileConfig.enableConsoleLogging === 'boolean'
-      ? fileConfig.enableConsoleLogging
-      : DEFAULTS.enableConsoleLogging,
-    executeJavascriptSafetyChecks: typeof fileConfig.executeJavascriptSafetyChecks === 'boolean'
-      ? fileConfig.executeJavascriptSafetyChecks
-      : DEFAULTS.executeJavascriptSafetyChecks,
-    autostart: typeof fileConfig.autostart === 'boolean' ? fileConfig.autostart : DEFAULTS.autostart,
-    maxInteractionLogEntries: Number.isInteger(fileConfig.maxInteractionLogEntries)
-      ? Math.max(10, Math.min(500, fileConfig.maxInteractionLogEntries))
-      : DEFAULTS.maxInteractionLogEntries,
-    lastClientTargetId: normalizeClientTargetId(fileConfig.lastClientTargetId),
-    activeToolProfileName: typeof fileConfig.activeToolProfileName === 'string' ? fileConfig.activeToolProfileName : '',
-    savedToolProfiles: normalizeSavedToolProfiles(fileConfig.savedToolProfiles),
-    language: normalizeLanguagePreference(fileConfig.language),
-    configPath,
-    configError: fileConfig.__error || '',
+  return { ...DEFAULTS, projectPath, port: getProjectPort(projectPath),
+    enabledTools: [], disabledTools: [], enabledToolCategories: [], disabledToolCategories: [],
+    configPath: '', configError: '',
   };
 }
 
-module.exports = {
-  DEFAULTS,
-  getProjectPath,
-  getProjectName,
-  getProjectIdentity,
-  getProjectPort,
-  getCocosVersion,
-  loadConfig,
-  hasRuntimeConfigChanges,
-  normalizeProfile,
-  normalizeStringList,
-  normalizeLanguagePreference,
-};
+module.exports = { DEFAULTS, getProjectPath, getProjectName, getProjectIdentity, getProjectPort, getCocosVersion, loadConfig };

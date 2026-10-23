@@ -1,23 +1,21 @@
 # Project isolation, Skills, and workflows
 
-## 多项目与迁移
+## 工程默认配置
 
-- 新项目按项目路径生成稳定端口，并使用 `cocos-<project>-<hash>` 配置名称。同名目录位于不同路径时也使用不同名称；端口哈希仍可能冲突，面板会明确显示回退状态。
-- 已有 `funplay-cocos-mcp.config.json` 保留固定端口。点击“使用项目独立端口”可以主动切换；“固定当前端口”可保存当前实际端口。切换后需重新配置客户端。
-- 临时回退端口不会被一键配置写入客户端。先解决冲突或固定端口，避免重启后指向错误项目。
-- 一键配置保留其他 MCP 配置。只有当前编辑器正在运行、旧 `funplay_cocos` 条目准确指向当前端口且仍是工具生成的简单格式时，才会迁移旧条目；其他旧条目保留供人工检查。手动改过地址的项目条目不会被静默覆盖。
-- Claude Code 使用 `~/.claude.json` 的 `projects[Git 仓库根目录].mcpServers`，不是所有项目共享的顶层条目。没有 Git 仓库时使用 Cocos 项目目录。这里的 Claude Code 配置不是 Claude Desktop 配置。
-- CodeBuddy 使用 IDE 4.0 起支持的 `<Cocos 项目>/.mcp.json`，不写 CLI 或旧编辑器插件的全局配置。请在 CodeBuddy 中打开该 Cocos 项目目录，并按客户端提示启用或批准服务器；不会自动放宽 MCP 审批设置。
+- 工程插件没有管理菜单和配置面板，随 Creator 自动启动，只监听本机回环地址。
+- 服务端口按工程路径稳定派生；工程身份校验用于阻止端口被其他工程复用后的错误操作。
+- Codex 通过连接文件发现实际地址。旧工程配置文件和环境覆盖不再生效，原文件保留。
+- Codex 和工程桥接均默认开放全部编辑器工具；JavaScript 安全检查和参数校验保持启用。
 
 ## Unified Cocos skill
 
 The two built-in Funplay skill templates have been merged into [cocos-skill](../../cocos-skill/SKILL.md). Install the unified skill through the repository Codex installer. The editor no longer has a Project Skills panel, managed-template installation/update/backup actions, or Configure + Skills setup. Existing user-authored skills and instruction files are retained. The generic create_project_skill tool remains available only for explicitly authored custom project guidance.
 
-Recent Activity still preserves nested result cards and separate script execution logs. Settings, tool exposure and client connection configuration continue to work independently of skills.
+MCP results retain structured data and separate script execution logs. Service startup and tool exposure use fixed defaults; no editor management panel is required.
 
 ## Asset Database readiness
 
-Enable the Full profile (or explicitly expose `check_asset_ready` in a custom profile). Example tool arguments:
+`check_asset_ready` is available by default. Example tool arguments:
 
 ```json
 {"target":"db://assets/ui/Main.prefab","waitMs":1500,"pollIntervalMs":100}
@@ -87,20 +85,6 @@ This workflow is read-only. Do not rebuild or modify the prefab.
 - Files are re-read on `prompts/list` and `prompts/get`; no editor restart is required. Clients that cache the prompt list may need a refresh/reconnect. The server does not advertise prompt-list change notifications.
 - Existing built-in prompts remain callable without arguments. Optional context arguments are `touched_paths`, `idea`, `focus`, and `target` / `component_type`, respectively.
 
-## Connection examples
+## 连接
 
-Use the exact server name and URL in the MCP Server panel. Documentation examples containing `funplay_cocos` and port `8765` illustrate a legacy/fixed endpoint, not the new default. The stdio wrapper's legacy default is also `8765`; pass `--url` or `FUNPLAY_COCOS_MCP_URL` explicitly for a project-derived port.
-
-Generated JSON preserves unrelated settings and entries. JSONC or malformed/non-object configuration is left untouched with an error. TOML updates preserve unrelated sections and options; ambiguous forms such as inline MCP tables or multiline strings currently require manual configuration. Configuration writes preserve file permissions and reject a changed read snapshot before atomic replacement.
-
-To pin a port explicitly in `cocos-mcp-bridge.config.json`:
-
-```json
-{
-  "host": "127.0.0.1",
-  "portMode": "fixed",
-  "port": 8765
-}
-```
-
-Use `"portMode": "project"` to derive the port again. `COCOS_MCP_PORT` overrides the saved choice for that editor process.
+默认使用 Codex 本地入口并调用 `connect_cocos_project`，见 [安装与迁移](CODEX_SETUP.md)。已有 HTTP 客户端从目标工程 `temp/cocos-mcp-connection.json` 获取实际 URL；兼容代理 `bin/funplay-cocos-mcp.js` 使用显式 `--url` 连接，不依赖旧的固定端口示例。

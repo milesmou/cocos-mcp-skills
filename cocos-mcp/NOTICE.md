@@ -9,3 +9,5 @@
 `lib/creator-bridge/`、`panel/prefab-preview.js`、`compat/creator-bridge/` 及 `docs/creator-bridge/` 的桥接与操作说明来自原 `milesmou/cocos3-skill`（仓库已删除），导入提交为 `8cb5e0f41114bc0bae89ee601b54277dd0ed2bb1`，现由本仓库维护。文档从技能侧迁入后调整路径与术语，避免两处维护。此部分不属于 Funplay 的 MIT 授权内容，具体见 [桥接来源说明](compat/creator-bridge/NOTICE.md)。
 
 `preview-template/` 基于用户提供的 MyCookingGirl Creator 3.8.8 模板，保留节点树面板并新增运行时 JavaScript 查询。它与来自 cocos3-skill 的桥接内容单独记录许可，不属于 Funplay 的 MIT 授权范围。
+
+本地整合版已移除编辑器服务菜单、工具开放范围和设置面板及其 IPC 管理逻辑，固定自动启动并开放全部工具。旧配置文件保留但不再读取；内部 Prefab 渲染面板继续由工具按需使用。

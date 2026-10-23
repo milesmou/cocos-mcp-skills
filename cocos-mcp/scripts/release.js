@@ -27,9 +27,6 @@ const REQUIRED_REPO_FILES = [
   'bin/funplay-cocos-mcp.js',
   'browser.js',
   'scene.js',
-  'panel/index.js',
-  'i18n/en.js',
-  'i18n/zh.js',
   'lib/global-install.js',
   'lib/server.js',
   'lib/tool-registry.js'
@@ -48,7 +45,6 @@ const PACKAGE_INCLUDES = [
   'browser.js',
   'scene.js',
   'panel',
-  'i18n',
   'lib'
 ];
 

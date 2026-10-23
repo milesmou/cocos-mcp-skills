@@ -179,11 +179,11 @@ function inferToolAnnotations(tool) {
 }
 
 function isToolExposed(config, tool) {
-  const profile = config && config.toolProfile === 'full'
-    ? 'full'
+  const profile = config && config.toolProfile === 'core'
+    ? 'core'
     : config && config.toolProfile === 'custom'
       ? 'custom'
-      : 'core';
+      : 'full';
   const category = toolCategory(tool);
   const enabledTools = normalizeNameSet(config && config.enabledTools);
   const disabledTools = normalizeNameSet(config && config.disabledTools);
@@ -581,7 +581,7 @@ function createToolRegistry({ getRuntimeContext, getStatus, interactionLog, runt
           projectName: runtimeContext.projectName,
           projectPath: runtimeContext.projectPath,
           cocosVersion: runtimeContext.cocosVersion,
-          toolProfile: runtimeContext.config ? runtimeContext.config.toolProfile : 'core',
+          toolProfile: runtimeContext.config?.toolProfile || 'full',
           status,
           selection: getCurrentSelection(),
           scene,
@@ -592,7 +592,7 @@ function createToolRegistry({ getRuntimeContext, getStatus, interactionLog, runt
     {
       name: 'get_tool_catalog',
       profile: 'core',
-      description: '[specialist] Return every built-in MCP tool with profile, category, and current exposure state. Use this before changing custom tool exposure.',
+      description: '[specialist] Return every built-in MCP tool with category, access hints, and current exposure state. All tools are enabled in the default bridge.',
       inputSchema: createSchema({}, []),
       handler: async () => registry.listToolCatalog(),
     },

@@ -13,7 +13,9 @@
 node scripts/install-codex.js
 ```
 
-安装器注册 `cocos-mcp`，并链接用户级 `cocos-skill`。保留源码目录；当前会话未加载工具时，重新连接 MCP。
+安装器注册 `cocos-mcp`，并链接用户级 `cocos-skill`。
+
+桥接随 Creator 自动启动，使用默认配置并开放全部工具，无需编辑器菜单或设置面板。保留源码目录；当前会话未加载工具时，重新连接 MCP。
 
 需要 Chrome 控制台、网络、性能和内存分析时，安装可选运行时（环境与授权要求见 [DevTools 文档](cocos-mcp/docs/DEVTOOLS.md)）：
 

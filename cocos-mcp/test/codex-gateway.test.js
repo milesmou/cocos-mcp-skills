@@ -63,7 +63,7 @@ test('gateway initializes and lists tools before any project or Creator is avail
   const initialized = await gateway.handle({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} });
   assert.equal(initialized.result.serverInfo.name, 'cocos-mcp');
   const listed = await gateway.handle({ jsonrpc: '2.0', id: 2, method: 'tools/list' });
-  assert.equal(listed.result.tools.length, 42);
+  assert.equal(listed.result.tools.length, 108);
   assert.ok(listed.result.tools.some((tool) => tool.name === 'execute_javascript'));
   assert.ok(listed.result.tools.some((tool) => tool.name === 'connect_cocos_project'));
   const blocked = await gateway.handle(request('execute_javascript', { context: 'scene', code: 'return 1' }));
@@ -120,6 +120,13 @@ test('installed runtime starts its real HTTP service and is discovered by the Co
     assert.equal((await gateway.connect({ projectPath: root, includeCompatibilityBridge: false })).connected, true);
     const response = await gateway.handle(request('get_project_info'));
     assert.equal(response.result.structuredContent.data.projectPath, root);
+    assert.equal(response.result.structuredContent.data.config.toolProfile, 'full');
+    const exposed = await fetch(gateway.connection.endpoint, { method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 42, method: 'tools/list' }) }).then(reply => reply.json());
+    const local = (await gateway.handle({ jsonrpc: '2.0', id: 43, method: 'tools/list' })).result.tools;
+    assert.equal(exposed.result.tools.length, 105);
+    assert.equal(local.length, exposed.result.tools.length + 3);
+    assert.ok(exposed.result.tools.every(tool => local.some(item => item.name === tool.name)));
   } finally {
     await extension.unload();
     global.Editor = previousEditor;
@@ -214,21 +221,6 @@ test('failed migration restores both legacy extensions without leaving an active
   const gateway = new CodexGateway({ sourceRoot: incompleteSource });
   await assert.rejects(gateway.connect({ projectPath: root, migrateLegacy: true }), /ENOENT/);
   assert.deepEqual(fs.readdirSync(path.join(root, 'extensions')).sort(), ['cocos3-codex-bridge', 'funplay-cocos-mcp']);
-});
-
-test('unified settings override legacy settings without changing the project identity', (t) => {
-  const root = project(t);
-  const identity = readProject(root).projectIdentity;
-  fs.writeFileSync(path.join(root, 'funplay-cocos-mcp.config.json'), JSON.stringify({ port: 19234, enableSessions: true }));
-  const legacy = loadConfig({ projectPath: root, env: {} });
-  assert.equal(legacy.port, 19234);
-  assert.equal(legacy.enableSessions, true);
-  assert.equal(path.basename(legacy.configPath), 'cocos-mcp-bridge.config.json');
-  fs.writeFileSync(legacy.configPath, JSON.stringify({ port: 19235, enableSessions: false }));
-  const current = loadConfig({ projectPath: root, env: {} });
-  assert.equal(current.port, 19235);
-  assert.equal(current.enableSessions, false);
-  assert.equal(readProject(root).projectIdentity, identity);
 });
 
 test('connection-file cleanup never removes a newer editor owner', (t) => {

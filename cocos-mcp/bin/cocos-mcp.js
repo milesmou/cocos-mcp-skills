@@ -7,13 +7,13 @@ const { readMessage, writeMessage } = require('./funplay-cocos-mcp');
 async function main() {
   const args = process.argv.slice(2);
   if (args.includes('--help')) {
-    console.error('Usage: node cocos-mcp.js [--profile core|full]\nStarts the Codex-side MCP service. Use connect_cocos_project to install/check a project bridge.');
+    console.error('Usage: node cocos-mcp.js (all tools enabled; legacy --profile core|full is accepted but ignored)\nStarts the Codex-side MCP service. Use connect_cocos_project to install/check a project bridge.');
     return;
   }
   const profileIndex = args.indexOf('--profile');
-  const profile = profileIndex < 0 ? 'core' : args[profileIndex + 1];
+  const profile = profileIndex < 0 ? 'full' : args[profileIndex + 1];
   if (!['core', 'full'].includes(profile) || args.length !== (profileIndex < 0 ? 0 : 2) || profileIndex > 0) throw new Error('Expected only --profile core|full.');
-  const gateway = new CodexGateway({ profile });
+  const gateway = new CodexGateway();
   try {
     while (true) {
       const { message, framing } = await readMessage(process.stdin);

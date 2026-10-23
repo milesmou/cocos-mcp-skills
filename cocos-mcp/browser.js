@@ -4,19 +4,9 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const manifest = require('./package.json');
-/** Authenticated helper and runtime relay share this extension's lifecycle. */
+/** Authenticated helpers and the runtime relay share this extension's lifecycle. */
 const creatorBridge = require('./lib/creator-bridge/main');
-const { getServerName, formatTargetPreview, buildTargets, configureTarget, getTargetStatuses } = require('./lib/client-config');
-const { readOptionalText, writeTextIfUnchanged } = require('./lib/atomic-file');
-const {
-  loadConfig,
-  getProjectPath,
-  getProjectName,
-  getProjectIdentity,
-  getProjectPort,
-  getCocosVersion,
-  hasRuntimeConfigChanges,
-} = require('./lib/config');
+const { loadConfig, getProjectPath, getProjectName, getProjectIdentity, getProjectPort, getCocosVersion } = require('./lib/config');
 const { McpServer } = require('./lib/server');
 const { createToolRegistry } = require('./lib/tool-registry');
 const { ResourceProvider } = require('./lib/resources');
@@ -25,20 +15,9 @@ const { InteractionLog } = require('./lib/interaction-log');
 const { RuntimeLog } = require('./lib/runtime-log');
 const { captureScriptExecution } = require('./lib/script-execution');
 const { ConnectionFile } = require('./lib/connection-file');
-const { checkForUpdate } = require('./lib/update-checker');
-const { installLatestUpdate } = require('./lib/updater');
-const {
-  activateGlobalExtension,
-  getGlobalInstallationState,
-  installGlobalExtension,
-} = require('./lib/global-install');
-const { normalizeSavedToolProfiles } = require('./lib/tool-profiles');
-const { detectEditorLanguage, normalizeLanguagePreference, resolveLanguage } = require('./lib/i18n');
 
-const EXTENSION_NAME = manifest.name || 'cocos-mcp-bridge';
+const EXTENSION_NAME = manifest.name;
 const LOG_PREFIX = '[Cocos MCP]';
-const REPOSITORY_URL = 'https://github.com/FunplayAI/funplay-cocos-mcp';
-const UPDATE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
 
 class ExtensionService {
@@ -50,9 +29,6 @@ class ExtensionService {
     this.promptProvider = null;
     this.interactionLog = new InteractionLog();
     this.runtimeLog = new RuntimeLog();
-    this.lastUpdateInfo = null;
-    this.lastInstallInfo = null;
-    this.lastGlobalInstallInfo = null;
     this.connectionFile = new ConnectionFile();
   }
 
@@ -71,43 +47,21 @@ class ExtensionService {
     }
   }
 
+  /** Start the default MCP service automatically when Creator loads the bridge. */
   load() {
     this.reloadRuntime();
     this.log('info', 'Extension loading...');
-    let result;
-    if (this.config.autostart) {
-      this.log('info', 'Autostart is enabled, starting MCP server.');
-      result = this.startServer();
-    } else {
-      this.log('info', 'Autostart is disabled. MCP server is idle.');
-      result = this.getStatus();
-    }
-
-    Promise.resolve(result)
-      .then(() => this.autoCheckUpdates({ reason: 'startup', silent: true }))
-      .catch((error) => this.log('warn', `Automatic update check skipped: ${error.message}`));
-    return result;
+    return this.startServer();
   }
 
-  unload() {
+  async unload() {
     this.log('info', 'Extension unloading...');
     this.connectionFile.remove();
     if (this.server) {
-      this.server.stop();
+      await this.server.stop();
       this.server = null;
     }
     this.log('info', 'Extension unloaded.');
-  }
-
-  openPanel(panelName) {
-    if (!global.Editor || !Editor.Panel || typeof Editor.Panel.open !== 'function') {
-      throw new Error('Editor.Panel.open is unavailable in this Cocos extension host.');
-    }
-    const normalized = String(panelName || 'default').trim();
-    const panelId = !normalized || normalized === 'default'
-      ? EXTENSION_NAME
-      : `${EXTENSION_NAME}.${normalized}`;
-    return Editor.Panel.open(panelId);
   }
 
   reloadRuntime() {
@@ -180,7 +134,6 @@ class ExtensionService {
     await this.server.start();
     this.connectionFile.write(getProjectPath(), this.getStatus());
     this.log('info', `MCP server started at ${this.getStatus().url}`);
-    this.log('info', `If this tool saves you time, please consider giving it a Star on GitHub: ${REPOSITORY_URL}`);
     return this.getStatus();
   }
 
@@ -244,9 +197,6 @@ class ExtensionService {
       enableConsoleLogging: this.config.enableConsoleLogging,
       executeJavascriptSafetyChecks: this.config.executeJavascriptSafetyChecks,
       autostart: this.config.autostart,
-      activeToolProfileName: this.config.activeToolProfileName,
-      savedToolProfiles: this.config.savedToolProfiles,
-      language: this.config.language,
       version: manifest.version || '0.0.0',
       projectPath: getProjectPath(),
       projectName: getProjectName(),
@@ -256,306 +206,11 @@ class ExtensionService {
     };
   }
 
-  getInstallationState() {
-    return getGlobalInstallationState({
-      ...this.getGlobalInstallEnvironment(),
-      packagePath: path.dirname(__filename),
-      projectPath: getProjectPath(),
-      currentVersion: manifest.version || '0.0.0',
-      availableVersion: this.lastUpdateInfo && this.lastUpdateInfo.ok
-        ? this.lastUpdateInfo.latestVersion
-        : manifest.version || '0.0.0',
-    });
-  }
-
-  getGlobalInstallEnvironment() {
-    const editorApp = global.Editor && global.Editor.App ? global.Editor.App : null;
-    return {
-      editorHomePath: editorApp && editorApp.home ? editorApp.home : '',
-      editorVersion: editorApp && editorApp.version ? editorApp.version : getCocosVersion(),
-    };
-  }
-
-  async activateGlobalInstall(globalPackagePath) {
-    const activation = await activateGlobalExtension({
-      editor: global.Editor,
-      globalPackagePath,
-    });
-    if (activation.errors.length > 0) {
-      this.log('warn', activation.errors.join(' '));
-    }
-    if (activation.shadowedBy) {
-      this.log(
-        'info',
-        `The global extension was registered, but the active project copy has priority at ${activation.shadowedBy}.`
-      );
-    }
-    return activation;
-  }
-
-  getPanelState() {
+  /** Dispatch an IPC tool call through the same registry used by HTTP MCP. */
+  async callTool(name, args) {
     this.ensureRuntime();
-    const status = this.getStatus();
-    const tools = this.toolRegistry.listTools();
-    const toolCatalog = typeof this.toolRegistry.listToolCatalog === 'function'
-      ? this.toolRegistry.listToolCatalog()
-      : tools;
-    const resources = this.resourceProvider.listResources();
-    const prompts = this.promptProvider.listPrompts();
-
-    const detectedLanguage = detectEditorLanguage(global.Editor);
-    return {
-      status,
-      tools,
-      toolCatalog,
-      resources,
-      prompts,
-      recentInteractions: this.interactionLog.list(20),
-      config: this.config,
-      updateInfo: this.lastUpdateInfo,
-      installInfo: this.lastInstallInfo,
-      installation: this.getInstallationState(),
-      globalInstallInfo: this.lastGlobalInstallInfo,
-
-      clientConfig: this.getClientConfig(),
-
-      clientTargets: getTargetStatuses({
-        ...this.config,
-        host: status.host,
-        port: status.port,
-      }),
-      localization: {
-        preference: this.config.language,
-        detectedLanguage,
-        resolvedLanguage: resolveLanguage(this.config.language, detectedLanguage),
-      },
-    };
-  }
-
-  listToolsForPanel() {
-    this.ensureRuntime();
-    return this.toolRegistry.listTools();
-  }
-
-  clearRecentActivity() {
-    this.ensureRuntime();
-    this.interactionLog.clear();
-    return this.getPanelState();
-  }
-
-  async callToolFromPanel(name, args) {
-    this.ensureRuntime();
-    this.log('info', `Panel calling tool: ${name}`);
+    this.log('info', `Calling tool: ${name}`);
     return await this.toolRegistry.callTool(name, args || {});
-  }
-
-  async checkUpdates(options = {}) {
-    this.ensureRuntime();
-    this.log('info', 'Checking GitHub for newer Cocos MCP releases.');
-    this.lastUpdateInfo = await checkForUpdate({
-      currentVersion: manifest.version || '0.0.0',
-      timeoutMs: Number.isFinite(options.timeoutMs) ? options.timeoutMs : 5000,
-    });
-    if (this.lastUpdateInfo.ok) {
-      this.log(
-        'info',
-        `Update check completed: current=${this.lastUpdateInfo.currentVersion}, latest=${this.lastUpdateInfo.latestVersion || 'unknown'}`
-      );
-    } else {
-      this.log('warn', `Update check failed: ${this.lastUpdateInfo.error}`);
-    }
-    return this.getPanelState();
-  }
-
-  async autoCheckUpdates(options = {}) {
-    this.ensureRuntime();
-    if (manifest.cocosMcpSkills && manifest.cocosMcpSkills.sourceManaged) {
-      return this.getPanelState();
-    }
-    const now = Date.now();
-    const lastCheckedAt = this.lastUpdateInfo && this.lastUpdateInfo.checkedAt
-      ? new Date(this.lastUpdateInfo.checkedAt).getTime()
-      : 0;
-    const fresh = Number.isFinite(lastCheckedAt) && lastCheckedAt > 0
-      && now - lastCheckedAt < UPDATE_CHECK_INTERVAL_MS;
-    if (!options.force && fresh) {
-      return this.getPanelState();
-    }
-
-    if (!options.silent) {
-      this.log('info', `Running automatic update check (${options.reason || 'panel'}).`);
-    }
-    return await this.checkUpdates({ timeoutMs: options.timeoutMs });
-  }
-
-  async installUpdate(options = {}) {
-    if (manifest.cocosMcpSkills && manifest.cocosMcpSkills.sourceManaged) {
-      throw new Error('This distribution is managed by cocos-mcp-skills source. Merge upstream changes and reinstall the local extension; upstream release installation is disabled.');
-    }
-    this.ensureRuntime();
-    let updateInfo = this.lastUpdateInfo;
-    if (!updateInfo || !updateInfo.ok || options.forceCheck) {
-      await this.checkUpdates({ timeoutMs: options.timeoutMs });
-      updateInfo = this.lastUpdateInfo;
-    }
-    if (!updateInfo || !updateInfo.ok) {
-      throw new Error(updateInfo && updateInfo.error ? updateInfo.error : 'Update check failed.');
-    }
-    if (!updateInfo.updateAvailable && !options.force) {
-      throw new Error(`Already up to date: ${updateInfo.currentVersion}.`);
-    }
-
-    const installResult = await installLatestUpdate({
-      releaseInfo: updateInfo,
-      currentVersion: manifest.version || '0.0.0',
-      packagePath: path.dirname(__filename),
-      timeoutMs: Number.isFinite(options.timeoutMs) ? options.timeoutMs : 30000,
-      log: (level, message, details) => this.log(level, message, details),
-    });
-    const reload = options.skipReload ? { scheduled: false, reason: 'skipReload requested' } : this.scheduleExtensionReload();
-    this.lastInstallInfo = {
-      ...installResult,
-      installedAt: new Date().toISOString(),
-      reload,
-    };
-    this.log(
-      'info',
-      `Installed Cocos MCP ${installResult.installedVersion}; ` +
-      (reload.scheduled ? 'extension reload scheduled.' : `reload not scheduled: ${reload.reason}`)
-    );
-    return this.getPanelState();
-  }
-
-  async installGlobally(options = {}) {
-    if (manifest.cocosMcpSkills && manifest.cocosMcpSkills.sourceManaged) {
-      throw new Error('This distribution is managed by cocos-mcp-skills source. Install the local extension per project; upstream global installation is disabled.');
-    }
-    this.ensureRuntime();
-    const installation = this.getInstallationState();
-    if (installation.globalPathExists && !installation.globalInstalled) {
-      throw new Error(
-        `Global extension path is occupied by an invalid package: ${installation.globalPackagePath}. ` +
-        `${installation.globalInstallError || 'Remove or rename it before installing.'}`
-      );
-    }
-    if (!installation.canInstallGlobally && installation.globalInstalled && !options.force) {
-      const activation = await this.activateGlobalInstall(installation.globalPackagePath);
-      this.lastGlobalInstallInfo = {
-        ok: true,
-        installed: false,
-        alreadyInstalled: true,
-        installedVersion: installation.globalVersion,
-        globalPackagePath: installation.globalPackagePath,
-        duplicateInstall: installation.duplicateInstall,
-        restartRequired: !activation.enabled,
-        activation,
-        installedAt: new Date().toISOString(),
-      };
-      return this.getPanelState();
-    }
-
-    let updateInfo = this.lastUpdateInfo;
-    if (!updateInfo || !updateInfo.ok || !updateInfo.downloadAvailable || options.forceCheck) {
-      await this.checkUpdates({ timeoutMs: options.timeoutMs });
-      updateInfo = this.lastUpdateInfo;
-    }
-    if (!updateInfo || !updateInfo.ok) {
-      throw new Error(updateInfo && updateInfo.error ? updateInfo.error : 'Release check failed.');
-    }
-    if (!updateInfo.downloadAvailable) {
-      throw new Error('Latest release does not include the verified extension assets required for global install.');
-    }
-
-    const installResult = await installGlobalExtension({
-      ...this.getGlobalInstallEnvironment(),
-      releaseInfo: updateInfo,
-      packagePath: path.dirname(__filename),
-      projectPath: getProjectPath(),
-      currentVersion: manifest.version || '0.0.0',
-      availableVersion: updateInfo.latestVersion,
-      timeoutMs: Number.isFinite(options.timeoutMs) ? options.timeoutMs : 30000,
-      force: Boolean(options.force),
-      log: (level, message, details) => this.log(level, message, details),
-    });
-    const activation = await this.activateGlobalInstall(installResult.globalPackagePath);
-    this.lastGlobalInstallInfo = {
-      ...installResult,
-      restartRequired: installResult.restartRequired && !activation.enabled,
-      activation,
-      installedAt: new Date().toISOString(),
-    };
-    this.log(
-      'info',
-      installResult.alreadyInstalled
-        ? `Global Cocos MCP ${installResult.installedVersion} is already installed.`
-        : `Installed Cocos MCP ${installResult.installedVersion} for all projects at ` +
-          `${installResult.globalPackagePath}. ` +
-          (activation.enabled
-            ? 'Cocos Creator scanned and enabled the global copy.'
-            : 'Cocos Creator registered the global copy; reopen projects that are already running to activate it.')
-    );
-    return this.getPanelState();
-  }
-
-  openUpdateRelease(url) {
-    const update = this.lastUpdateInfo || {};
-    const targetUrl = String(url || update.releaseUrl || REPOSITORY_URL).trim();
-    const parsed = new URL(targetUrl);
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-      throw new Error(`Refusing to open non-HTTP URL: ${targetUrl}`);
-    }
-
-    try {
-      const electron = require('electron');
-      if (electron && electron.shell && typeof electron.shell.openExternal === 'function') {
-        electron.shell.openExternal(targetUrl);
-        return { opened: true, url: targetUrl, method: 'electron.shell.openExternal' };
-      }
-    } catch (error) {
-      // Fall through to Editor or platform open commands.
-    }
-
-    if (global.Editor && Editor.Utils && Editor.Utils.Shell && typeof Editor.Utils.Shell.openExternal === 'function') {
-      Editor.Utils.Shell.openExternal(targetUrl);
-      return { opened: true, url: targetUrl, method: 'Editor.Utils.Shell.openExternal' };
-    }
-
-    const childProcess = require('child_process');
-    const command = process.platform === 'darwin'
-      ? 'open'
-      : process.platform === 'win32'
-        ? 'cmd'
-        : 'xdg-open';
-    const args = process.platform === 'win32' ? ['/c', 'start', '', targetUrl] : [targetUrl];
-    const child = childProcess.spawn(command, args, {
-      detached: true,
-      stdio: 'ignore',
-    });
-    child.unref();
-    return { opened: true, url: targetUrl, method: command };
-  }
-
-  scheduleExtensionReload(delayMs = 1200) {
-    if (!global.Editor || !Editor.Package) {
-      return { scheduled: false, reason: 'Editor.Package is unavailable' };
-    }
-    const canReload = typeof Editor.Package.reload === 'function';
-    if (!canReload) {
-      return {
-        scheduled: false,
-        reason: 'Cocos Creator does not expose a reliable package reload API; restart Cocos Creator to load the updated extension',
-      };
-    }
-
-    setTimeout(async () => {
-      try {
-        this.log('info', 'Reloading Cocos MCP after update installation.');
-        await Editor.Package.reload(EXTENSION_NAME);
-      } catch (error) {
-        this.log('error', `Extension reload after update failed: ${error.message}`);
-      }
-    }, delayMs);
-    return { scheduled: true, delayMs };
   }
 
   async executeEditorScript(payload, runtimeContext) {
@@ -571,16 +226,6 @@ class ExtensionService {
       listTools: () => this.toolRegistry.listTools(),
       readResource: async (uri) => await this.resourceProvider.readResource(uri),
       callTool: async (name, toolArgs) => await this.toolRegistry.callTool(name, toolArgs || {}),
-      listClientTargets: () => {
-        const effective = this.getEffectiveServerConnection();
-        return getTargetStatuses({
-          ...this.config,
-          host: effective.host,
-          port: effective.port,
-        });
-      },
-      getClientConfig: () => this.getClientConfig(),
-      configureClient: async (targetId) => this.configureClient(targetId),
     };
 
     const execute = async (scriptConsole) => {
@@ -616,192 +261,6 @@ class ExtensionService {
       : execute(console);
   }
 
-  async readResourceFromPanel(uri) {
-    this.ensureRuntime();
-    this.log('info', `Panel reading resource: ${uri}`);
-    return await this.resourceProvider.readResource(uri);
-  }
-
-  getClientConfig() {
-    const effective = this.getEffectiveServerConnection();
-    const { url } = effective;
-    const targetConfig = {
-      ...this.config,
-      host: effective.host,
-      port: effective.port,
-    };
-    const targets = buildTargets(targetConfig).map((target) => ({
-      id: target.id,
-      name: target.name,
-      configPath: target.configPath,
-      isToml: Boolean(target.isToml),
-      preview: this.formatClientTargetPreview(target),
-    }));
-    const baseUrl = url.replace(/\/$/, '');
-    return {
-      url,
-      serverName: getServerName(this.config),
-      configurationBlocked: Boolean(this.server && this.server.isRunning() && effective.port !== this.config.port),
-      codex: `[mcp_servers.${getServerName(this.config)}]\nurl = "${url}"\n`,
-      json: JSON.stringify({
-        mcpServers: {
-          [getServerName(this.config)]: {
-            url,
-          },
-        },
-      }, null, 2),
-      opencode: JSON.stringify({
-        mcp: {
-          [getServerName(this.config)]: {
-            type: 'remote',
-            url,
-          },
-        },
-      }, null, 2),
-      targets,
-      curl: {
-        health: `curl ${baseUrl}/health`,
-        tools: `curl ${baseUrl}/tools`,
-        catalog: `curl ${baseUrl}/tools?catalog=1`,
-      },
-    };
-  }
-
-  formatClientTargetPreview(target) {
-    return formatTargetPreview(target);
-  }
-
-  async configureClient(targetId) {
-    this.ensureRuntime();
-    this.log('info', `Configuring MCP client target: ${targetId}`);
-    const effective = this.getEffectiveServerConnection();
-    const result = configureTarget(
-      {
-        ...this.config,
-        host: effective.host,
-        port: effective.port,
-        stablePort: this.config.port,
-        migrateLegacy: Boolean(this.server && this.server.isRunning()),
-      },
-      targetId
-    );
-    await this.saveConfig({
-      clientConfigEntries: {
-        ...this.config.clientConfigEntries,
-        [targetId]: { serverName: result.serverName, url: result.url, configPath: result.configPath, projectIdentity: result.projectIdentity },
-      },
-    });
-    this.log('info', `MCP client configured: ${result.name} -> ${result.configPath}`);
-    return {
-      ...result,
-      clientTargets: getTargetStatuses({
-        ...this.config,
-        host: effective.host,
-        port: effective.port,
-      }),
-    };
-  }
-
-  async saveConfig(partialConfig) {
-    this.ensureRuntime();
-    const originalConfigText = readOptionalText(this.config.configPath);
-    if (this.config.configError) throw new Error(this.config.configError);
-    const nextPortMode = partialConfig && partialConfig.portMode
-      ? (partialConfig.portMode === 'project' ? 'project' : 'fixed')
-      : partialConfig && partialConfig.port !== undefined && Number(partialConfig.port) !== this.config.port
-        ? 'fixed' : this.config.portMode;
-    const nextPort = nextPortMode === 'project' ? getProjectPort() : partialConfig && partialConfig.port !== undefined
-      ? Number(partialConfig.port)
-      : this.config.port;
-    const nextMaxEntries = partialConfig && partialConfig.maxInteractionLogEntries !== undefined
-      ? Number(partialConfig.maxInteractionLogEntries)
-      : this.config.maxInteractionLogEntries;
-    const normalizeList = (value, fallback) => {
-      if (Array.isArray(value)) {
-        return value.map((item) => String(item || '').trim()).filter(Boolean);
-      }
-      if (typeof value === 'string') {
-        return value.split(/[\n,]/).map((item) => item.trim()).filter(Boolean);
-      }
-      return fallback || [];
-    };
-    const normalizeCategories = (value, fallback) => normalizeList(value, fallback)
-      .map((item) => item.toLowerCase());
-    const nextProfile = partialConfig && partialConfig.toolProfile
-      ? (partialConfig.toolProfile === 'full' || partialConfig.toolProfile === 'custom' ? partialConfig.toolProfile : 'core')
-      : this.config.toolProfile;
-    const nextConfig = {
-      ...(originalConfigText ? JSON.parse(originalConfigText) : {}),
-      host: partialConfig && partialConfig.host ? String(partialConfig.host) : this.config.host,
-      port: Number.isInteger(nextPort) && nextPort > 0 && nextPort <= 65535 ? nextPort : this.config.port,
-      portMode: nextPortMode,
-      clientConfigEntries: partialConfig && partialConfig.clientConfigEntries
-        ? partialConfig.clientConfigEntries : this.config.clientConfigEntries,
-      toolProfile: nextProfile,
-      enabledTools: normalizeList(partialConfig && partialConfig.enabledTools, this.config.enabledTools),
-      disabledTools: normalizeList(partialConfig && partialConfig.disabledTools, this.config.disabledTools),
-      enabledToolCategories: normalizeCategories(
-        partialConfig && partialConfig.enabledToolCategories,
-        this.config.enabledToolCategories
-      ),
-      disabledToolCategories: normalizeCategories(
-        partialConfig && partialConfig.disabledToolCategories,
-        this.config.disabledToolCategories
-      ),
-      enableSessions: partialConfig && typeof partialConfig.enableSessions === 'boolean'
-        ? partialConfig.enableSessions
-        : this.config.enableSessions,
-      enableConsoleLogging: partialConfig && typeof partialConfig.enableConsoleLogging === 'boolean'
-        ? partialConfig.enableConsoleLogging
-        : this.config.enableConsoleLogging,
-      executeJavascriptSafetyChecks: partialConfig && typeof partialConfig.executeJavascriptSafetyChecks === 'boolean'
-        ? partialConfig.executeJavascriptSafetyChecks
-        : this.config.executeJavascriptSafetyChecks,
-      autostart: partialConfig && typeof partialConfig.autostart === 'boolean'
-        ? partialConfig.autostart
-        : this.config.autostart,
-      maxInteractionLogEntries: Number.isInteger(nextMaxEntries)
-        ? Math.max(10, Math.min(500, nextMaxEntries))
-        : this.config.maxInteractionLogEntries,
-      lastClientTargetId: partialConfig && partialConfig.lastClientTargetId
-        ? String(partialConfig.lastClientTargetId)
-        : this.config.lastClientTargetId,
-      activeToolProfileName: partialConfig && typeof partialConfig.activeToolProfileName === 'string'
-        ? String(partialConfig.activeToolProfileName)
-        : this.config.activeToolProfileName,
-      savedToolProfiles: partialConfig && Array.isArray(partialConfig.savedToolProfiles)
-        ? normalizeSavedToolProfiles(partialConfig.savedToolProfiles)
-        : this.config.savedToolProfiles,
-      language: partialConfig && partialConfig.language !== undefined
-        ? normalizeLanguagePreference(partialConfig.language)
-        : this.config.language,
-    };
-
-    const configPath = this.config.configPath;
-    writeTextIfUnchanged(configPath, JSON.stringify(nextConfig, null, 2) + '\n', originalConfigText);
-    const wasRunning = Boolean(this.server && this.server.isRunning());
-    const runtimeConfigChanged = hasRuntimeConfigChanges(this.config, nextConfig);
-    const requiresRestart = wasRunning && runtimeConfigChanged;
-    // Console printing is a live preference, independent of the server lifecycle
-    // and the in-memory diagnostic/activity buffers.
-    this.config.enableConsoleLogging = nextConfig.enableConsoleLogging;
-    if (this.server) this.server.config.enableConsoleLogging = nextConfig.enableConsoleLogging;
-    if (requiresRestart) {
-      await this.stopServer();
-      await this.startServer();
-    } else if (runtimeConfigChanged) {
-      this.reloadRuntime();
-    } else {
-      this.config = {
-        ...this.config,
-        ...nextConfig,
-        configPath,
-        configError: '',
-      };
-    }
-    return this.getPanelState();
-  }
-
   ensureRuntime() {
     if (!this.config || !this.toolRegistry || !this.resourceProvider || !this.promptProvider) {
       this.reloadRuntime();
@@ -815,78 +274,21 @@ module.exports = {
   load() {
     creatorBridge.load();
     try {
-      return Promise.resolve(service.load()).catch((error) => { creatorBridge.unload(); service.unload(); throw error; });
+      return Promise.resolve(service.load()).catch(async (error) => { creatorBridge.unload(); await service.unload(); throw error; });
     } catch (error) {
-      creatorBridge.unload(); service.unload(); throw error;
+      creatorBridge.unload(); void service.unload(); throw error;
     }
   },
-  unload() {
-    try { return service.unload(); } finally { creatorBridge.unload(); }
+  async unload() {
+    try { await service.unload(); } finally { creatorBridge.unload(); }
   },
   methods: {
-    /** Report authenticated transport status without exposing its token. */
+    /** Report the authenticated transport without exposing its token. */
     bridgeStatus() { return creatorBridge.methods.bridgeStatus(); },
-    openPanel(panelName) {
-      return service.openPanel(panelName);
-    },
-    openToolExposurePanel() {
-      return service.openPanel('tool-exposure');
-    },
-    openSettingsPanel() {
-      return service.openPanel('settings');
-    },
-
-    startServer() {
-      return service.startServer();
-    },
-    stopServer() {
-      return service.stopServer();
-    },
-    restartServer() {
-      return service.restartServer();
-    },
-    getStatus() {
-      return service.getStatus();
-    },
-    getPanelState() {
-      return service.getPanelState();
-    },
-    clearRecentActivity() {
-      return service.clearRecentActivity();
-    },
-    saveConfig(config) {
-      return service.saveConfig(config);
-    },
-    listToolsForPanel() {
-      return service.listToolsForPanel();
-    },
-    callToolFromPanel(name, args) {
-      return service.callToolFromPanel(name, args);
-    },
-
-    checkUpdates() {
-      return service.checkUpdates();
-    },
-    autoCheckUpdates() {
-      return service.autoCheckUpdates({ reason: 'panel' });
-    },
-    installUpdate(options) {
-      return service.installUpdate(options);
-    },
-    installGlobally(options) {
-      return service.installGlobally(options);
-    },
-    openUpdateRelease(url) {
-      return service.openUpdateRelease(url);
-    },
-    readResourceFromPanel(uri) {
-      return service.readResourceFromPanel(uri);
-    },
-    getClientConfig() {
-      return service.getClientConfig();
-    },
-    configureClient(targetId) {
-      return service.configureClient(targetId);
-    },
+    startServer() { return service.startServer(); },
+    stopServer() { return service.stopServer(); },
+    restartServer() { return service.restartServer(); },
+    getStatus() { service.ensureRuntime(); return service.getStatus(); },
+    callTool(name, args) { return service.callTool(name, args); },
   },
 };
