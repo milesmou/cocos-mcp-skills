@@ -12,7 +12,7 @@
 - 用户给出完整蓝图时仍先检查工程契约。发现与脚本、资源或现有 Prefab 冲突时，按证据修正规格并记录原因。
 - 只有会改变结构且无法合理推断的必要信息缺失时才询问用户。其余未知项标记为“待确认”或带依据的“估算”，继续不依赖该信息的工作。
 
-始终读取 [references/blueprint-rules.md](../references/assemble-cocos-ui/blueprint-rules.md) 和 [references/ui-rules.md](../references/assemble-cocos-ui/ui-rules.md)。需要输出蓝图时使用 [references/blueprint-template.md](../references/assemble-cocos-ui/blueprint-template.md)。目标为 MyCookingGirl，或工程包含 `cocos3-toolkit` 的 `ReferenceCollector`、`MButton` 等组件时，还要读取 [references/my-cooking-girl-prefab-structure.md](../references/assemble-cocos-ui/my-cooking-girl-prefab-structure.md) 和 [references/my-cooking-girl-ui.md](../references/assemble-cocos-ui/my-cooking-girl-ui.md)。输入包含效果图时必须读取 [references/visual-fidelity.md](../references/assemble-cocos-ui/visual-fidelity.md)。已有 UI 需要补充或替换正式美术、字体、状态图或嵌套视觉 Prefab 时，必须读取并执行 [references/art-replacement.md](../references/assemble-cocos-ui/art-replacement.md)。
+始终读取 [references/blueprint-rules.md](../references/assemble-cocos-ui/blueprint-rules.md) 和 [references/ui-rules.md](../references/assemble-cocos-ui/ui-rules.md)。需要输出蓝图时使用 [references/blueprint-template.md](../references/assemble-cocos-ui/blueprint-template.md)。项目专用结构、组件和业务规则从目标工程已读取的 `AGENTS.md` 及其指定文档获取，并核对当前实现，不按组件名称自动加载其他项目的规范。输入包含效果图时必须读取 [references/visual-fidelity.md](../references/assemble-cocos-ui/visual-fidelity.md)。已有 UI 需要补充或替换正式美术、字体、状态图或嵌套视觉 Prefab 时，必须读取并执行 [references/art-replacement.md](../references/assemble-cocos-ui/art-replacement.md)。
 涉及生图、切图、合图或从效果图拆分 SpriteFrame 时，还必须读取并执行 [references/art-slicing.md](../references/assemble-cocos-ui/art-slicing.md)。必须在生图或切图之前依据效果图和项目设计分辨率确定每个素材的正式输出像素尺寸、透明留白及锚点/接口位置，并写入素材规格表；未确定不得开始制作。随后按规格输出 PNG、核对实际文件尺寸，再导入 Creator。禁止生成后临时决定正式尺寸，或直接导入大尺寸制作源图，仅靠节点缩放满足显示尺寸。
 
 命令中的 `<技能根目录>` 替换为本技能集合所在目录的绝对路径，`<工程目录>` 替换为目标 Cocos 工程绝对路径；保留路径引号，不依赖当前工作目录。
@@ -35,9 +35,9 @@ Creator 3.8 工程通常从 `settings/v2/packages/project.json` 的 `general.des
    - 按 [工程设计分辨率](#工程设计分辨率) 读取当前配置及适配设置，再读取同业务目录内容，从同职责 Prefab 中选择 1 至 3 个结构参考。不要把全工程统计直接当作单个界面的模板。
 2. 判断 Prefab 职责：全屏窗口、弹窗、HUD、可复用控件、列表项、状态节点或纯视觉特效。由职责决定根尺寸、控制器、内容容器和适配方式。
 3. 提取结构契约。
-   - 标出根控制组件和每个嵌套控制器、`ReferenceCollector` 或同类收集器的作用域。
+   - 标出根控制组件和每个嵌套控制器、项目引用收集器的实际作用域。
    - 搜索脚本使用的节点名、引用 key、按钮名、固定索引和子节点路径。这些名称和顺序属于代码接口。
-   - 标出按钮事件归属、Switch 子节点顺序和默认状态、初始 inactive 节点、AnimationClip 目标路径和排序边界。
+   - 标出按钮事件归属、项目状态组件的状态顺序和默认值、初始 inactive 节点、AnimationClip 目标路径和排序边界。
    - 区分本地序列化节点、嵌套 Prefab 实例、固定设计槽位、运行时模板和运行时生成内容。
 4. 有效果图时锁定视觉基线：原图像素尺寸、方向、背景或透明通道、文本、语言、数据、滚动位置、状态组、动画时间点和安全区。逐项记录资源模式：
    - 已提供或能在工程中唯一定位对应资源：精确资源模式。
@@ -53,7 +53,7 @@ Creator 3.8 工程通常从 `settings/v2/packages/project.json` 的 `general.des
    - 本地节点路径唯一，父路径存在，命名遵循目标工程。
    - 引用 key 在所属收集器作用域唯一，嵌套边界未被跨越。
    - 每个按钮只归属一个控制器，按钮名与控制脚本一致。
-   - Switch 直接子节点顺序与 `checkIndex` 一致；固定槽位未被误判为模板。
+   - 项目状态组件的节点顺序与实际索引/名称约定一致；固定槽位未被误判为模板。
    - 嵌套 Prefab 没有被展平；实例资源、属性覆盖和运行时生成关系明确。
    - AnimationClip 路径、脚本路径查询、排序边界和默认激活状态完整。
    - Layout、Widget、动画与手动坐标在同一属性上没有控制冲突。
@@ -75,7 +75,7 @@ Creator 3.8 工程通常从 `settings/v2/packages/project.json` 的 `general.des
     - 对生图或切图得到的正式 SpriteFrame，绑定前先查询并核对其实际像素宽高、透明边界和旋转/trim 状态是否符合真实尺寸契约。不得用任意缩放、拉伸或修改父节点坐标去掩盖切片尺寸错误；发现不一致时回到切图或生成环节修正。SpriteFrame 绑定可能触发 RAW 尺寸自动写入，绑定后必须再次写回蓝图规定的 UITransform 尺寸并复查锚点、点击热区和覆盖文字。
     - 设置子节点尺寸，再配置父容器 Layout。
     - 最后配置 Widget、项目交互组件、ScrollView 和必要的 EventHandler。
-12. 恢复运行时契约：刷新节点收集器，核对按钮路由、Switch 默认状态、滚动 Content、模板显隐、动画路径、排序边界和业务组件引用。不要批量激活原本用于状态、模板或特效的禁用节点。
+12. 恢复运行时契约：刷新节点收集器，核对按钮路由、项目状态组件默认值、滚动 Content、模板显隐、动画路径、排序边界和业务组件引用。不要批量激活原本用于状态、模板或特效的禁用节点。
 13. 从内层到外层调用 `Layout.updateLayout()` 和 `Widget.updateAlignment()`，再重新测量尺寸、边界和点击区域。
 14. 按 [验收流程](validate-cocos-content.md) 组合结构、引用、脚本和交互检查。桥接可用时，`validateUI` 能补充基础 UI 约束检查，但不读取效果图或验证视觉位置；其 0 error/0 warning 只能称为“结构校验通过”。独立 Prefab 根不含 Canvas 时按服务 API 使用 `assumeRenderRoot`，场景 Canvas 子树则不启用。修复所有 error；逐条判断 warning，只有与工程约定一致且运行结构完整时才能接受。
 15. 保存场景或 Prefab，等待 AssetDB idle，再次检查实际节点树、布局、资源引用、控制器作用域和嵌套 Prefab 状态。
@@ -94,7 +94,7 @@ Creator 3.8 工程通常从 `settings/v2/packages/project.json` 的 `general.des
 
 ## 比较与项目派生状态
 
-使用 `ReferenceCollector` 的工程中，新增、移动或重命名 `$` 节点后，通过 MCP 调用工程实际组件的刷新逻辑并检查收集结果，确认作用域和 key 未发生意外变化。`inspectUILayout`、`inspectComponent` 等桥接辅助方法的参数见服务 [桥接 API](../../cocos-mcp/docs/creator-bridge/api.md)，不在技能中复制调用实现。
+使用引用收集器或自动绑定组件的工程中，按目标工程约定识别绑定节点。新增、移动或重命名后，通过 MCP 调用工程实际组件的刷新逻辑并检查结果，确认作用域和 key 未发生意外变化；不预设节点前缀、刷新方法或嵌套收集边界。`inspectUILayout`、`inspectComponent` 等桥接辅助方法的参数见服务 [桥接 API](../../cocos-mcp/docs/creator-bridge/api.md)，不在技能中复制调用实现。
 
 精确资源模式下严格比较效果图和真实渲染图。差异图、叠图和报告写入目标工程的 `temp/assemble-cocos-ui/`：
 
@@ -110,7 +110,7 @@ python "<技能根目录>/scripts/compare-ui-images.py" --reference "<效果图�
 - 制作请求：实际节点树与蓝图一致；有证据支持的规格修正已记录。
 - 业务脚本需要的节点名、组件和引用可解析，收集器作用域内没有重复 key。
 - 交互使用工程既有组件和分发方式，点击区域不小于视觉区域，没有重复触发路径。
-- Layout、Widget、Mask、ScrollView、Switch、动画、排序边界、嵌套 Prefab 和初始状态经过校验。
+- Layout、Widget、Mask、ScrollView、项目状态组件、动画、排序边界、嵌套 Prefab 和初始状态经过校验。
 - 保存后的 Prefab 能重新打开，结构校验无 error，关键 warning 有明确解释；此结果不代表视觉验收通过。
 - 提供了全部对应美术资源时，真实渲染图与设计分辨率参考副本的尺寸、内容状态和 RGBA 像素完全相同，`mismatchPixels = 0`；保留原始效果图和映射记录。
 - 缺少部分或全部美术资源时，只有对应元素使用纯色 Sprite；界面结构、尺寸、位置、文字、交互和已有素材已验收，并列出纯色节点及待替换资源。

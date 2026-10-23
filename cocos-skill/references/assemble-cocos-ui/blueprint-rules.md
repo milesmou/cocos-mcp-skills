@@ -26,7 +26,7 @@
 | 来源 | 本地节点、嵌套 Prefab、固定槽位、模板、运行时生成 |
 | 变化 | 显隐、换图、变色、文字、缩放、动画 |
 | 数据 | 动态文本、动态图片、列表项、进度、倒计时 |
-| 交互 | MButton 或 Button、Switch、Toggle、滚动、分页、关闭遮罩 |
+| 交互 | 项目按钮或 Button、状态切换、Toggle、滚动、分页、关闭遮罩 |
 | 状态 | Loading、Content、Empty、Locked、Selected、Disabled 等 |
 | 适配 | 固定边、居中、安全区、可伸缩区域、背景填充方式 |
 
@@ -35,10 +35,10 @@
 ## 控制器与引用作用域
 
 - 将控制组件所在节点视为作用域根。记录该组件管理的引用、按钮和动态模板。
-- `ReferenceCollector` 类组件只收集自身有效子树。遇到嵌套收集器时，外层作用域在该子树处停止。
-- `$Name` 等项目约定的引用节点名属于脚本接口。蓝图同时记录节点完整路径、收集器路径和脚本使用的 key。
+- 引用收集器的命名规则、扫描范围、嵌套边界与刷新方式以目标工程文档及实际实现为准，蓝图记录实际作用域。
+- 项目约定的引用节点名属于脚本接口。蓝图同时记录节点完整路径、收集器路径和脚本使用的 key，不预设绑定前缀。
 - 同一作用域中规范化后的 key 必须唯一。移动节点跨越收集器边界时，视为接口变化。
-- `MUIComponent` 一类控制器自动扫描按钮时，记录最近控制器归属。不要同时规划自动分发和指向同一逻辑的 Inspector 回调。
+- 控制器自动扫描按钮时，按当前实现记录扫描边界和事件归属。不要同时规划自动分发和指向同一逻辑的 Inspector 回调。
 - 只有目标脚本或相邻 Prefab 已经使用序列化事件时，才规划 `EventHandler`。
 - 重构已有 Prefab 时，节点路径还可能被 AnimationClip、`getChildByPath` 或实例属性覆盖引用。重命名或换父节点前必须查询这些绑定。
 
@@ -69,7 +69,7 @@
 ```text
 DialogRoot
 ├── CloseOverlay
-├── home
+├── PanelContent
 └── GuideLayer
 ```
 
@@ -107,7 +107,7 @@ DialogRoot
 | 普通文字 | Label | 明确字号、行高、颜色、对齐、Overflow |
 | 富文本 | RichText | 仅在确有混排、链接或富文本标记时使用 |
 | 点击 | 项目按钮组件或 Button | 根节点作为热区，视觉内容放子节点 |
-| 显示状态切换 | 项目 Switch 或独立状态组 | 明确直接子节点顺序、名称和默认状态 |
+| 显示状态切换 | 项目状态组件或独立状态组 | 明确索引/名称约定及默认状态 |
 | 用户互斥选择 | Toggle + ToggleContainer | 明确默认选中和是否允许取消 |
 | 自动排列 | Layout | 先设子节点尺寸，再更新 Layout |
 | 裁剪 | Mask | 必须是被裁剪内容的祖先 |
@@ -118,7 +118,7 @@ DialogRoot
 | 输入拦截 | BlockInputEvents | 弹窗或浮层按需要添加 |
 | 动画 | Animation | 只有节点需独立控制的动画才添加 |
 
-项目 `Switch` 如果只是按索引或名称控制子节点显隐，不得改写为 Toggle。Toggle 表示用户选择行为，两者语义不同。
+项目状态组件如果只是按索引或名称控制子节点显隐，不得改写为 Toggle。Toggle 表示用户选择行为，两者语义不同。
 
 ## Sprite 与 Label
 
@@ -157,9 +157,9 @@ RewardScrollView [UITransform, ScrollView]
 
 蓝图必须写明 viewport 和 Content 的路径。若目标工程允许 `ScrollView.view` 留空并通过带 Mask 的 `content.parent` 推断 viewport，记录“viewportSource = content.parent”；不要为了满足通用示例增加多余层级。明确 Content 的 Layout 方向、间距、边距、锚点、初始位置和模板激活状态。
 
-### Switch 与 Toggle
+### 项目状态组件与 Toggle
 
-- 项目 Switch：列出直接子节点的稳定顺序、默认 `checkIndex`，以及脚本是否按名称更新。
+- 项目状态组件：按实际实现记录状态节点的稳定顺序、默认值，以及脚本按索引或名称访问的方式。
 - Toggle：列出 ToggleContainer、默认项、`allowSwitchOff` 和 checkMark。
 - 状态差异只涉及属性时复用节点；大范围结构差异才创建状态组。
 
@@ -175,7 +175,7 @@ RewardScrollView [UITransform, ScrollView]
 | 设计预览样本 | 说明哪些样本保留、运行时是否清空 |
 | 脚本完全生成 | 只保留 Content 和生成挂点 |
 
-不要仅凭多个相似节点就删除副本。先搜索脚本是否按 `children[index]`、固定名称、固定数量或 Switch 索引访问它们。
+不要仅凭多个相似节点就删除副本。先搜索脚本是否按 `children[index]`、固定名称、固定数量或状态索引访问它们。
 
 ## 状态与默认激活
 

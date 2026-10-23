@@ -10,8 +10,8 @@
 - UITransform 的尺寸、锚点、位置和缩放，以及 Layout、Widget、Mask、ScrollView、ProgressBar 控制的属性。
 - Sprite 的 SpriteFrame、color、type、sizeMode、trim 相关表现、fill 参数和材质。
 - Label 的字体来源、useSystemFont、fontFamily、字号、行高、Overflow、对齐、描边及可见字形包围框。
-- Button、Toggle、项目 Switch 的 transition target、状态资源、直接子节点顺序和默认状态。
-- 控制组件、ReferenceCollector、EventHandler、AnimationClip 路径、嵌套 Prefab 实例及属性覆盖。
+- 项目按钮或 Button、Toggle、项目状态组件的 transition target、状态资源、状态节点顺序和默认值。
+- 控制组件、项目引用收集器、EventHandler、AnimationClip 路径、嵌套 Prefab 实例及属性覆盖。
 
 用 MCP 的节点、组件和布局查询结果保存可核对的基线；服务桥接已安装时可使用其 `inspectUILayout` 辅助方法。有效果图时还要保存同尺寸、同状态的真实渲染 PNG。不要以编辑器场景截图代替运行结果。
 
@@ -29,7 +29,7 @@
 - **九宫格适配**：面板、按钮底板或气泡使用 SLICED；先确认 SpriteFrame 的 border，再保持目标 UITransform 尺寸。
 - **结构不兼容**：正式资源需要多个独立状态、骨骼动画、Mask、Prefab 或可交互子元素，无法由原节点承载。停止普通换装，先修订蓝图和运行时契约，再按重构流程执行。
 
-按钮、Toggle、Switch 和动态换图节点必须把所有状态或运行时资源列全，不能只替换当前可见状态。
+按钮、Toggle、项目状态组件和动态换图节点必须把所有状态或运行时资源列全，不能只替换当前可见状态。
 
 ## 3. 导入和绑定
 
@@ -38,7 +38,7 @@
 按清单使用节点 UUID 和组件 UUID 定位。普通换装只允许修改视觉组件及其必要几何属性，不执行以下操作：
 
 - 不重命名、移动、删除业务节点，不改变同级顺序或默认激活状态。
-- 不删除或重新创建 Button、ReferenceCollector、控制脚本、EventHandler、Layout、Widget、Mask、ScrollView 等功能组件。
+- 不删除或重新创建项目按钮或 Button、引用收集器、控制脚本、EventHandler、Layout、Widget、Mask、ScrollView 等功能组件。
 - 不展开或断开嵌套 Prefab，不把实例内部节点复制为本地节点。
 
 绑定正式 SpriteFrame 时同时处理 `Sprite.color`、透明度、type、sizeMode、材质和 fill 参数。占位色只用于纯白占位图的染色；正式彩色资源默认恢复不染色的白色，除非效果图或工程事实要求着色。先确定几何策略，再决定是否改变 UITransform，不能让换图副作用隐式改尺寸。
@@ -60,9 +60,9 @@
 
 保存前后都执行结构和运行时契约检查。至少确认：
 
-- 节点路径、父子顺序、激活状态、控制器作用域和 ReferenceCollector key 与基线一致。
+- 节点路径、父子顺序、激活状态、控制器作用域和项目绑定 key 与基线一致。
 - Button/EventHandler 路由唯一且可解析；normal、pressed、hover、disabled 等实际使用状态资源完整。
-- Switch 直接子节点顺序和 `checkIndex` 不变；Toggle、ScrollView、模板和动态挂点仍有效。
+- 项目状态组件的状态顺序和默认值不变；Toggle、ScrollView、模板和动态挂点仍有效。
 - AnimationClip 目标路径、嵌套 Prefab 实例关系和属性覆盖未丢失。
 - 无 missing asset、组件脚本丢失、非正尺寸热区或新增的结构校验 error。
 

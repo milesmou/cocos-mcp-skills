@@ -12,6 +12,7 @@
 - 动态数据：
 - 交互与滚动：
 - 证据不足项：
+- 目标工程 AGENTS.md、适用目录级规则及相关文档：
 
 ## 2. 结构证据
 
@@ -29,11 +30,11 @@
 
 ```text
 FeaturePanel.prefab
-└── FeaturePanel [UITransform, ReferenceCollector, Controller] {local}
-    ├── CloseOverlay [UITransform, MButton] {local}
-    └── home [UITransform] {local}
+└── FeaturePanel [UITransform, Controller] {local}
+    ├── CloseOverlay [UITransform, Button] {local}
+    └── PanelContent [UITransform] {local}
         ├── Background [UITransform, Sprite] {local}
-        ├── TopCurrency [Prefab] {instance: db://assets/.../topGold.prefab}
+        ├── SharedControl [Prefab] {instance: db://assets/.../SharedControl.prefab}
         ├── Content [UITransform, Layout] {local}
         │   └── ItemTemplate [UITransform, ItemController] {template, inactive}
         └── EffectMount {runtime}
@@ -46,7 +47,7 @@ FeaturePanel.prefab
 - `{template}`：运行时克隆的序列化模板。
 - `{runtime}`：脚本运行时创建，Prefab 编辑阶段只存在挂点。
 
-所有本地 UI 节点默认包含 UITransform。为可读性在树中省略时，必须在规格表中列出。
+此树只示意来源和层级；Controller、Button、节点名及公共资源按目标工程替换，引用收集器按实际绑定机制添加。所有本地 UI 节点默认包含 UITransform。为可读性在树中省略时，必须在规格表中列出。
 
 ## 4. 控制器、引用与复用
 
@@ -55,7 +56,7 @@ FeaturePanel.prefab
 | 作用域根路径 | 控制组件 | 引用收集器 | 引用节点路径 | 脚本 key | 按钮归属规则 | 依据 |
 | --- | --- | --- | --- | --- | --- | --- |
 
-每个引用节点只归属一个作用域。嵌套收集器形成新边界，外层作用域不得列出其内部引用。
+按目标工程的收集器或绑定机制填写实际作用域；嵌套边界及跨域访问能力以当前实现为准，不预设其他项目的扫描规则。
 
 ### Prefab 实例
 
@@ -99,7 +100,7 @@ FeaturePanel.prefab
 | 状态 | 显示节点 | 隐藏节点 | 属性变化 | 默认 | 互斥组 | 控制者 | 依据 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-项目 Switch 另列其直接子节点顺序和默认 `checkIndex`。不要将 Switch 状态子节点误写成可删除的重复副本。
+项目状态组件另列其实际状态顺序、默认值和索引/名称访问方式。不要将状态子节点误写成可删除的重复副本。
 
 ## 7. 视觉与交互配置
 
@@ -120,8 +121,8 @@ FeaturePanel.prefab
 | 根节点路径 | 类型 | 热区尺寸 | Transition | 状态视觉 | 引用关系 | 事件归属 | 阻止穿透 | 备注 |
 | --- | --- | ---: | --- | --- | --- | --- | --- | --- |
 
-- MButton 或 Button 说明 normal、pressed、disabled 和稳定按钮名。
-- Switch 说明直接子节点顺序、名称和 `checkIndex`。
+- 项目按钮或 Button 说明 normal、pressed、disabled 和稳定按钮名。
+- 项目状态组件说明状态顺序、名称和默认值。
 - Toggle 说明 ToggleContainer、默认项、`allowSwitchOff` 和 checkMark。
 - ScrollView 说明 viewport、Mask、Content、方向、惯性、回弹和 `viewportSource`。
 
@@ -136,12 +137,12 @@ FeaturePanel.prefab
 
 按依赖分阶段列出：
 
-1. 创建 Prefab 根节点、根控制组件和引用收集器。
+1. 创建 Prefab 根节点、根控制组件及工程实际需要的引用收集器。
 2. 实例化公共 Prefab，设置实例根位置和允许的属性覆盖。
 3. 创建本地功能容器、固定槽位和模板挂点。
 4. 创建叶子视觉、状态与交互节点。
 5. 添加组件并设置尺寸、锚点、激活状态和基础属性。
-6. 绑定 Mask、ScrollView、ProgressBar、Switch、Toggle 等引用。
+6. 绑定 Mask、ScrollView、ProgressBar、项目状态组件、Toggle 等引用。
 7. 刷新引用收集器，从内向外更新 Layout 和 Widget。
 8. 检查按钮归属、状态子节点顺序、动画路径、排序边界、渲染顺序和动态模板。
 9. 保存、比较实际树与蓝图并运行 UI 校验。

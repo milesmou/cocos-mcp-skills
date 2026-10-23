@@ -7,7 +7,8 @@
 现有目录职责如下；新增功能沿用相应边界：
 
 - `cocos-mcp/`：基于 Funplay 的服务与工程桥接。`bin/cocos-mcp.js` 是安装到 Codex 的默认本地 MCP 入口，编辑器未启动时也可初始化；`connect_cocos_project` 负责检查、安装缺失插件与连接。工程内唯一扩展标识为 `cocos-mcp-bridge`；`lib/creator-bridge/` 存放认证 HTTP、运行时中继和场景辅助实现，`panel/prefab-preview.js` 保留内部 Prefab 渲染。`compat/creator-bridge/` 仅保留兼容 CLI 和测试，不另装插件。底层操作与桥接文档统一维护在 `docs/`，服务运行代码不放在技能目录。
-- `cocos-skill/`：面向 Cocos Creator 3.8.x 的统一技能，唯一入口为该目录下的 `SKILL.md`。`modules/` 仅维护 MCP 协作、UI 拼装、任务验收和项目专用业务设计；`references/` 保存 UI 参考，`scripts/` 只保留 MCP 未覆盖的离线对象表检查、图片图册与比较。不要重新添加场景、节点、组件、资源、动画、预览或截图等重复操作模块及脚本。
+- `cocos-skill/`：面向 Cocos Creator 3.8.x 的统一技能，唯一入口为该目录下的 `SKILL.md`。`modules/` 仅维护通用 MCP 协作、UI 拼装、运行时分析和任务验收；`references/` 保存通用 UI 参考，`scripts/` 只保留 MCP 未覆盖的离线对象表检查、图片图册与比较。不要重新添加场景、节点、组件、资源、动画、预览或截图等重复操作模块及脚本。
+- `docs/project-agents/`：保存供迁入目标工程的项目 AGENTS 文档。项目专用组件、默认参数、命名、资源路径和业务架构规则随目标工程维护，不由通用技能自动加载，不覆盖目标工程已有 `AGENTS.md`。
 
 `scripts/install-codex.js` 注册 Codex 本地服务并链接用户级技能，使用源码目录作为安装来源，不将工程路径写死到全局配置。安装器不得覆盖同名用户技能或其他 MCP 配置。
 
@@ -17,7 +18,7 @@
 
 每个技能目录只维护一个技能入口，不再嵌套同名技能目录，不将内部模块单独注册为技能。新增或调整能力时，同步更新技能入口中的模块索引和适用范围。
 
-在线任务先阅读 `cocos-skill/modules/mcp-workflow.md`。通用操作使用 MCP；执行上下文见 `cocos-mcp/docs/EDITOR_WORKFLOW.md`，桥接辅助能力的安装、CLI 和 API 见 `cocos-mcp/docs/creator-bridge/`。MyCookingGirl / cookMachine 示例仅在目标工程采用对应架构时加载，不作为所有工程的约定。
+在线任务先阅读 `cocos-skill/modules/mcp-workflow.md`。通过 MCP 操作外部工程前，显式读取目标工程的 `AGENTS.md`、适用目录级规则及其中指定的任务相关文档，不能假设从本仓库启动会自动加载其他工程规则。通用操作使用 MCP；执行上下文见 `cocos-mcp/docs/EDITOR_WORKFLOW.md`，桥接辅助能力的安装、CLI 和 API 见 `cocos-mcp/docs/creator-bridge/`。
 
 首次连接工程时由 MCP 安装缺失桥接，返回 `restart_required` 后提示用户保存并完全重启 Creator；不自动关闭编辑器，不将安装完成当作连接就绪。重启后再次连接并核对工程身份，仅在 `connected: true` 时编辑；已有同名插件不自动覆盖。旧 `funplay-cocos-mcp` / `cocos3-codex-bridge` 通过显式 `migrateLegacy: true` 迁移，完整备份后移出 extensions；迁移后必须重启。旧文档的“重新加载代替重启”规则不适用于这一默认安装流程。
 

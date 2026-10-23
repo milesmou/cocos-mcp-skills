@@ -9,7 +9,9 @@ description: 配合 Cocos MCP 处理 Cocos Creator 3.8 工程检查、场景与 
 
 ## 执行入口
 
-在线任务先读 [MCP 协作流程](modules/mcp-workflow.md)，调用 `connect_cocos_project` 并传入目标工程绝对路径。它会安装缺失的工程桥接插件；返回 `restart_required` 时，提示用户保存并完全重启该工程的 Creator，等待用户完成后再次连接。只有 `connected: true` 才能进行编辑操作，不自动关闭或重启用户的编辑器。
+在线任务先读 [MCP 协作流程](modules/mcp-workflow.md)。通过 MCP 操作外部工程前，显式读取目标工程的 `AGENTS.md`、适用的目录级规则及其中指定的任务相关文档；不能假设从工具仓库启动会自动加载另一工程的规则。工程专用组件、命名、资源路径和业务约定由目标工程维护，不在通用技能中预设。
+
+完成规则读取后，调用 `connect_cocos_project` 并传入目标工程绝对路径。它会安装缺失的工程桥接插件；返回 `restart_required` 时，提示用户保存并完全重启该工程的 Creator，等待用户完成后再次连接。只有 `connected: true` 才能进行编辑操作，不自动关闭或重启用户的编辑器。
 
 Codex 侧 MCP 可以在 Creator 未启动时工作。工具参数、桥接安装和服务实现统一查阅 MCP 自带文档或运行时 schema，技能不提供另一套安装脚本。
 
@@ -27,9 +29,6 @@ Codex 侧 MCP 可以在 Creator 未启动时工作。工具参数、桥接安装
 | 字体、溢出、缺字和用户要求的本地化 | [字体与本地化](references/assemble-cocos-ui/text-and-localization.md) |
 | 根据修改范围组合检查、判断证据与验收结论 | [验收与离线结构检查](modules/validate-cocos-content.md) |
 | Chrome 预览异常、网络排障、卡顿与内存分析 | [运行时排障与性能分析](modules/analyze-runtime-performance.md) |
-| cookMachine 架构下的章节专用业务逻辑 | [项目专用示例](modules/create-special-cook-machine.md) |
-
-只有目标工程实际采用 `cookMachine` / `cocos3-toolkit` 架构且任务涉及章节烹饪设备时，读取 [项目专用示例](modules/create-special-cook-machine.md)。MyCookingGirl 的 UI 参考也仅在对应项目结构中使用，不作为其他工程的默认结构。
 
 ## 操作边界与验证
 

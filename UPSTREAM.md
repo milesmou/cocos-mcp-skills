@@ -14,6 +14,8 @@
 
 更新仍维护的上游时，在临时目录获取新快照，比较相应源目录并合并改动，保留本仓库的统一技能入口、模块路径、桥接归属和分发限制，最后运行服务与技能检查并更新本表的提交号。原 `cocos3-skill` 仓库已删除，其导入内容由本仓库继续维护，表中提交号用于历史溯源。避免用上游完整目录覆盖当前整合结果。原逐项操作技能和独立资源增删改脚本已去重，不能在更新时重新导入；底层能力与参数维护在 MCP，技能维护组合工作流。
 
+原技能中的 MyCookingGirl UI 参考和 cookMachine 专用流程已整理到 [项目 AGENTS 文档](docs/project-agents/my-cooking-girl/AGENTS.md)，供迁入目标游戏工程，不再作为通用技能模块加载。此迁移保留原内容来源，不改变上述许可边界。
+
 `cocos-mcp/preview-template/` 的 EJS 和节点树面板基于用户提供的 MyCookingGirl Creator 3.8.8 预览模板，新增本地 Agent 执行器与认证中继。该项目模板没有提供独立 LICENSE，不能视为 Funplay MIT 授权范围；发布或再分发前需确认其许可。
 
 可选 Chrome 调试运行时为 Google / ChromeDevTools 的 [chrome-devtools-mcp](https://github.com/ChromeDevTools/chrome-devtools-mcp)，固定 npm 版本 `1.11.0`，许可 Apache-2.0。由安装器放在用户 Codex 目录，不复制其实现到本仓库，不扩展 Funplay MIT 的许可边界。

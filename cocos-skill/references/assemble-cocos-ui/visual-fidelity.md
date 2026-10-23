@@ -102,7 +102,7 @@ y = canvasHeight / 2 - (top + height / 2)
 
 ## 真实渲染
 
-静态 Prefab 使用服务的真实内部渲染能力，输出尺寸与所采用的比较参考副本一致。界面依赖业务数据、Widget/SafeWidget、运行时换图、动画或特效时，通过 MCP 获取真实游戏预览画面，并先把运行状态固定到参考图对应状态。工具选择与证据边界见 [任务验收](../../modules/validate-cocos-content.md)。
+静态 Prefab 使用服务的真实内部渲染能力，输出尺寸与所采用的比较参考副本一致。界面依赖业务数据、Widget/项目适配组件、运行时换图、动画或特效时，通过 MCP 获取真实游戏预览画面，并先把运行状态固定到参考图对应状态。工具选择与证据边界见 [任务验收](../../modules/validate-cocos-content.md)。
 
 所有对比产物写入目标工程 `temp/assemble-cocos-ui/`。禁止用编辑器截图、设计工具预览或手工合成图代替 Creator 的真实渲染结果。
 
@@ -126,7 +126,7 @@ y = canvasHeight / 2 - (top + height / 2)
 - 参考图与真实渲染图像素宽高完全相同。
 - 比较报告 `mismatchPixels` 为 0，`maxChannelDifference` 为 0。
 - 没有占位素材、临时文字、缺失字体或未固定的动态内容。
-- 可交互元素仍是独立节点，并保留 MButton、ReferenceCollector、Switch、ScrollView 等工程契约。
+- 可交互元素仍是独立节点，并保留项目按钮、引用绑定、状态组件和 ScrollView 等工程契约。
 - 未把整张效果图或局部大截图作为覆盖层隐藏真实 UI。
 
 存在未提供的美术或字体资源时，可以报告“大致效果拼装完成”，但必须同时满足：
