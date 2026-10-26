@@ -52,7 +52,7 @@ Common messages:
 
 Use `db://assets/...` URLs for destinations and queries whenever possible.
 
-`query-asset-dependencies`, `query-asset-users`, `query-asset-data`, `is-busy`, and full `refresh` are typed protected Editor messages in Creator 3.8 rather than stable public extension APIs. Keep the bridge version pinned to Creator 3.8.x, and re-check the installed declarations before carrying these calls to another Creator minor line.
+`query-asset-dependencies`, `query-asset-users`, `query-asset-data`, `is-busy`, and full `refresh` are typed protected Editor messages in Creator 3.8 rather than stable public extension APIs. This bridge applies only to Cocos Creator 3.8.x starting at 3.8.5 (`>=3.8.5 <3.9.0`); other versions are unsupported. Re-check the installed declarations after updating within 3.8.x; do not carry these calls to another Creator minor line.
 
 ## Scene-script methods
 

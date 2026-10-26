@@ -4,6 +4,8 @@
 
 ## 建立工程上下文
 
+本流程仅适用于 Cocos Creator 3.8.5 及以上的 3.8.x 版本（`>=3.8.5 <3.9.0`），不适用于其他版本。连接前读取目标工程配置确认版本，连接后核对实际编辑器版本；版本不明或不在此范围时停止工程操作，不绕过版本检查。
+
 1. 先调用 `connect_cocos_project` 并传入工程绝对路径，服务检查并安装缺失桥接。返回 `restart_required` 时提示用户保存并重启 Creator，等待完成后按原参数再次连接；只有 `connected: true` 才继续。安装与连接状态见 [CODEX_SETUP.md](CODEX_SETUP.md)。
 2. 通过已连接 MCP 的 `get_project_info`、`get_editor_state` 确认工程路径、Creator 版本、当前场景与连接状态。路径与用户目标不一致时先定位正确连接，不操作另一个工程。
 3. 使用 `get_tool_catalog` 和客户端实际暴露的 schema 确认工具与参数。当前默认开放全部 105 个编辑器工具；仍需根据实际 schema 及目标 Creator 版本选择参数。

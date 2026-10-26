@@ -4,7 +4,7 @@
     <strong>嵌入 Cocos Creator 编辑器的 MCP Server</strong>
   </p>
   <p align="center">
-    <a href="#"><img src="https://img.shields.io/badge/Cocos%20Creator-3.8%2B-blue" alt="Cocos Creator 3.8+"></a>
+    <a href="#"><img src="https://img.shields.io/badge/Cocos%20Creator-3.8.5%E2%80%933.8.x-blue" alt="Cocos Creator 3.8.5–3.8.x only"></a>
     <a href="#"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
     <a href="#"><img src="https://img.shields.io/badge/MCP-Compatible-green" alt="MCP Compatible"></a>
     <a href="#"><img src="https://img.shields.io/badge/Platform-Editor%20Only-orange" alt="Editor Only"></a>
@@ -14,6 +14,8 @@
     中文 | <a href="./README.md">English</a>
   </p>
 </p>
+
+> 本整合版仅适用于 Cocos Creator 3.8.5 及以上的 3.8.x 版本（`>=3.8.5 <3.9.0`），不适用于其他版本。安装与连接以 [本整合版使用说明](README.md) 为准。
 
 > 如果这个项目对你有帮助，欢迎顺手点一个 Star。它能帮助更多 Cocos 开发者发现项目，也能支持后续持续维护。
 

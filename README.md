@@ -1,6 +1,6 @@
 # cocos-mcp-skills
 
-面向 Cocos Creator 3.8.x 的 MCP 工具与技能集合，支持场景与 Prefab 编辑、UI 拼装、资源和脚本协作、运行时排障与性能分析。
+仅适用于 Cocos Creator 3.8.5 及以上的 3.8.x 版本（`>=3.8.5 <3.9.0`）的 MCP 工具与技能集合，不适用于其他版本。支持场景与 Prefab 编辑、UI 拼装、资源和脚本协作、运行时排障与性能分析。
 
 - [cocos-mcp](cocos-mcp/README.md)：安装到 Codex，自动检查工程桥接，提供编辑器、游戏运行时和 Chrome DevTools 工具。
 - [cocos-skill](cocos-skill/README.md)：统一技能入口，组织 UI 制作、业务开发和任务验收流程。

@@ -1,6 +1,6 @@
 # cocos-skill
 
-面向 Cocos Creator 3.8.x 的统一工作流技能，配合 [cocos-mcp](../cocos-mcp/README.md) 完成工程检查、UI 蓝图与拼装、美术替换、业务开发、运行时排障、性能分析和验收。
+仅适用于 Cocos Creator 3.8.5 及以上的 3.8.x 版本（`>=3.8.5 <3.9.0`），不适用于其他版本。配合 [cocos-mcp](../cocos-mcp/README.md) 完成工程检查、UI 蓝图与拼装、美术替换、业务开发、运行时排障、性能分析和验收。
 
 唯一入口是 [SKILL.md](SKILL.md)，按任务加载内部模块和参考文档。底层编辑操作由 MCP 提供；技能仅保留离线对象表检查、图片图册与图片比较脚本。
 

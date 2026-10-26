@@ -1,6 +1,6 @@
 # 控制 Cocos Creator 编辑器
 
-默认操作使用已连接的 MCP 工具或 `execute_javascript`，见 [编辑器执行说明](../EDITOR_WORKFLOW.md)。本文维护统一 Creator 3.8 认证桥接的安装与使用，CLI 示例只在桥接实际安装后适用。
+默认操作使用已连接的 MCP 工具或 `execute_javascript`，见 [编辑器执行说明](../EDITOR_WORKFLOW.md)。本文维护统一认证桥接的安装与使用，仅适用于 Cocos Creator 3.8.5 及以上的 3.8.x 版本（`>=3.8.5 <3.9.0`），不适用于其他版本；CLI 示例只在桥接实际安装后适用。
 
 通过 Creator 官方消息修改打开的场景、Prefab 和资源，不直接改写 Prefab 序列化文件。
 
@@ -94,4 +94,4 @@ node "<MCP目录>/compat/creator-bridge/scripts/cocos-editor.mjs" --project "<�
 - 资源导入、脚本编译和场景切换后使用 `wait` 轮询实际状态，不猜测等待秒数。
 - 不把连接文件、令牌或 `temp` 内容提交到仓库。
 - 不开放非本机监听地址，不向桥接白名单加入任意消息转发。
-- [桥接 API](api.md) 标出的 protected AssetDB 消息只用于 Creator 3.8.x；升级编辑器前重新核对本机类型声明。
+- [桥接 API](api.md) 标出的 protected AssetDB 消息只用于 Creator 3.8.x；升级 3.8.x 补丁版本后重新核对本机类型声明，其他版本不适用。

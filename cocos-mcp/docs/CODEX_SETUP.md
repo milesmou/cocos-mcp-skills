@@ -15,7 +15,7 @@ Codex 侧负责启动、工程选择、安装检查和连接状态，工程侧�
 
 ## 安装一次
 
-环境要求：本机 Codex CLI、Node.js 18+；在线工程使用 Creator 3.8.x。在仓库根目录执行：
+环境要求：本机 Codex CLI、Node.js 18+；目标工程及编辑器仅限 Cocos Creator 3.8.5 及以上的 3.8.x 版本（`>=3.8.5 <3.9.0`），不适用于其他版本。连接前读取工程配置确认版本，连接后核对实际编辑器版本；版本不明或不在此范围时停止工程操作。在仓库根目录执行：
 
 ```powershell
 node scripts/install-codex.js --dry-run
