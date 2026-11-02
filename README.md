@@ -33,7 +33,7 @@ Agent 会连接目标工程，首次使用时安装唯一插件 `cocos-mcp-bridg
 
 旧插件迁移与连接说明见 [安装文档](cocos-mcp/docs/CODEX_SETUP.md)，能力与参数见 [工具手册](cocos-mcp/docs/TOOLS.md)。开发和检查命令见 [CONTRIBUTING.md](cocos-mcp/CONTRIBUTING.md)，Agent 约定见 [AGENTS.md](AGENTS.md)。
 
-外部工程操作前会显式读取目标工程规则。项目专用约定随游戏工程维护；[MyCookingGirl 项目 AGENTS 文档](docs/project-agents/my-cooking-girl/AGENTS.md)汇总了原 UI 与 cookMachine 规则，供合并到对应工程，不覆盖已有规则。
+外部工程操作前显式读取目标工程规则。项目约定在游戏工程维护，共享规则由项目引用 cocos3-toolkit 的 `docs/project/AGENTS.md`。
 
 ## 来源
 
