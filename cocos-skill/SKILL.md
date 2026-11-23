@@ -1,43 +1,38 @@
 ---
 name: cocos-skill
-description: 仅适用于 Cocos Creator 3.8.5 及以上的 3.8.x 版本，不适用于其他版本。配合 Cocos MCP 处理工程检查、场景与 Prefab 编辑、资源和脚本协作、UI 蓝图和拼装、响应式布局、美术替换、运行时排障、性能分析及验收；底层编辑与 DevTools 操作由 MCP 提供。
+description: 为 Cocos Creator 3.8.5 及以上的 3.8.x 工程提供磁盘结构检查、素材缩略图册、严格 RGBA 图片比较，以及 Chrome Web 预览的网络、CPU 和内存排障。
 ---
 
-# Cocos Creator 工作流
+# Cocos Creator 辅助诊断
 
-本技能仅适用于 Cocos Creator 3.8.5 及以上的 3.8.x 版本（`>=3.8.5 <3.9.0`），不适用于 3.8.0–3.8.4、2.x、3.0–3.7、3.9 及其他版本。连接前读取目标工程配置确认版本，连接后核对实际编辑器版本；版本不明或不在此范围时停止工程操作，说明原因，不套用本技能或绕过版本检查。
+适用于 Creator `>=3.8.5 <3.9.0`。场景、Prefab、资源编辑及 UI 制作和在线验收由 Funplay 的 `funplay-cocos-mcp-workflow` 与 `funplay-cocos-ui-composition` 提供。需要操作目标工程时，先读取工程适用的规则，再使用对应的 [Funplay 官方技能](https://github.com/FunplayAI/funplay-cocos-mcp/blob/main/docs/PROJECT_WORKFLOWS.md#built-in-skill-references)。
 
-先确认用户指定的工程路径、Creator 版本和目标场景或 Prefab。通过 Codex 侧 MCP 检查工程桥接；已有可用连接时复用编辑器，缺少插件时按连接结果提示用户重启。以 MCP 返回的 UUID、组件类型和资源信息为准，修改后保存并重新读取结果。
+## 磁盘结构检查
 
-## 执行入口
+怀疑场景或 Prefab 序列化损坏、元数据缺失或重复时，使用只读脚本检查 `assets/`。它检查空对象表、越界的 `__id__`、JSON 解析错误、缺失或孤立的 `.meta`，以及跨文件的重复 UUID 声明。结果反映已保存文件。
 
-在线任务先读 [MCP 协作流程](modules/mcp-workflow.md)。通过 MCP 操作外部工程前，显式读取目标工程的 `AGENTS.md`、适用的目录级规则及其中指定的任务相关文档；不能假设从工具仓库启动会自动加载另一工程的规则。工程专用组件、命名、资源路径和业务约定由目标工程维护，不在通用技能中预设。
+```powershell
+node "<技能根目录>/scripts/validate-project.mjs" --project "<工程目录>" --json
+```
 
-完成规则读取后，调用 `connect_cocos_project` 并传入目标工程绝对路径。它会安装缺失的工程桥接插件；返回 `restart_required` 时，提示用户保存并完全重启该工程的 Creator，等待用户完成后再次连接。只有 `connected: true` 才能进行编辑操作，不自动关闭或重启用户的编辑器。
+需要核对资源引用是否能在 AssetDB 解析时，使用 Funplay 的 `validate_asset_dependencies` 或 `validate_prefab_references`。
 
-Codex 侧 MCP 可以在 Creator 未启动时工作。工具参数、桥接安装和服务实现统一查阅 MCP 自带文档或运行时 schema，技能不提供另一套安装脚本。
+## 图像工具
 
-## 按任务加载
+需要从本地素材中查找候选时生成缩略图册。输出包括素材路径、像素尺寸、透明边界和分页缩略图。
 
-只读取相关模块；下表各项都是本技能的内部文档，不是独立技能。
+```powershell
+python "<技能根目录>/scripts/build-visual-asset-catalog.py" --root "<素材目录>" --output "<输出目录>"
+```
 
-| 任务 | 模块 |
-| --- | --- |
-| 确认工程、选择工具、组织修改步骤 | [MCP 协作流程](modules/mcp-workflow.md) |
-| UI 分析、蓝图、拼装与美术替换 | [UI](modules/assemble-cocos-ui.md) |
-| 资源导入、脚本/预览就绪、真实输入与保存证据 | [工程就绪](references/project-readiness.md) |
-| Widget/Layout、SafeArea、滚动、组件属性归属与动画 | [UI 组件规则](references/assemble-cocos-ui/ui-rules.md) |
-| SpriteFrame、九宫格与导入器修改 | [切图与导入](references/assemble-cocos-ui/art-slicing.md) |
-| 字体、溢出、缺字和用户要求的本地化 | [字体与本地化](references/assemble-cocos-ui/text-and-localization.md) |
-| 根据修改范围组合检查、判断证据与验收结论 | [验收与离线结构检查](modules/validate-cocos-content.md) |
-| Chrome 预览异常、网络排障、卡顿与内存分析 | [运行时排障与性能分析](modules/analyze-runtime-performance.md) |
+用户要求严格像素比较时，将同一尺寸、对应同一内容状态的参考图和实际截图传给脚本。尺寸不同时报告尺寸差异；尺寸相同时逐像素比较 RGBA，可输出热图、50% 叠图及 JSON。用 `mismatchBounds`、`topMismatchRows` 和 `topMismatchColumns` 定位差异。
 
-## 操作边界与验证
+```powershell
+python "<技能根目录>/scripts/compare-ui-images.py" --reference "<参考图>" --actual "<实际截图>" --diff "<输出目录>/diff.png" --overlay "<输出目录>/overlay.png" --report "<输出目录>/compare.json"
+```
 
-- 场景与 Prefab 的写入优先通过编辑器消息和可用 MCP 工具完成，保留 Prefab 实例关系与撤销语义；不把序列化 JSON 当作常规编辑入口。
-- 资源操作使用 MCP/AssetDB，保持既有 UUID 与 `.meta`；技能不再提供独立的资源导入、移动或重命名实现。
-- 用户只要求分析或蓝图时交付分析；已经要求制作或修复时继续完成相应编辑与验证。
-- 桥接截图和运行时中间文件先写目标工程 `temp/cocos-skill/<任务>/`；桥接会拒绝 `temp/` 外的 PNG 输出。本仓库自身的临时验证产物使用 `.work/`，正式交付遵循用户指定位置。
-- 等待导入、脚本注册和异步操作的实际结果，按改动检查引用、编译、布局、交互或运行画面。离线引用检查通过不代表脚本编译或游戏运行通过。
+图片脚本需要 Python 3.10+ 和 Pillow。将命令中的占位符替换为对应绝对路径。
 
-辅助脚本仅保留 MCP 尚未覆盖的离线对象表检查、图片图册与图片比较。命令中的 `<技能根目录>` 是本技能目录的绝对路径，`<工程目录>` 是目标 Creator 工程的绝对路径；替换占位符并保留引号。
+## Chrome Web 预览排障
+
+分析 Web 预览的请求、主线程开销或内存保留时，读取 [运行时排障与性能分析](modules/analyze-runtime-performance.md)。

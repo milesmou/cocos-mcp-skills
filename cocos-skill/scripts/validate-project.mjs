@@ -48,20 +48,19 @@ function collectMetaUuids(meta, file, uuidOwners, issues) {
   }
 }
 
-function scanSerialized(value, objectCount, file, issues, referencedUuids, trail = '$') {
+function scanSerialized(value, objectCount, file, issues, trail = '$') {
   if (!value || typeof value !== 'object') return;
   if (Number.isInteger(value.__id__) && (value.__id__ < 0 || value.__id__ >= objectCount)) {
     addIssue(issues, 'error', 'invalid-object-reference', file, `Object reference ${value.__id__} is out of range`, { trail, objectCount });
   }
-  if (typeof value.__uuid__ === 'string') referencedUuids.add(value.__uuid__.split('@')[0]);
   if (Array.isArray(value)) {
     for (let index = 0; index < value.length; index += 1) {
-      scanSerialized(value[index], objectCount, file, issues, referencedUuids, `${trail}[${index}]`);
+      scanSerialized(value[index], objectCount, file, issues, `${trail}[${index}]`);
     }
     return;
   }
   for (const [key, child] of Object.entries(value)) {
-    scanSerialized(child, objectCount, file, issues, referencedUuids, `${trail}.${key}`);
+    scanSerialized(child, objectCount, file, issues, `${trail}.${key}`);
   }
 }
 
@@ -81,7 +80,6 @@ export async function validateProject(projectInput) {
 
   const entries = await walk(assets);
   const uuidOwners = new Map();
-  const referencedUuids = new Set();
   const serializedFiles = [];
 
   for (const entry of entries) {
@@ -117,15 +115,9 @@ export async function validateProject(projectInput) {
         addIssue(issues, 'error', 'invalid-object-table', relativePath, 'Serialized scene or prefab must be a non-empty array');
         continue;
       }
-      scanSerialized(objects, objects.length, relativePath, issues, referencedUuids);
+      scanSerialized(objects, objects.length, relativePath, issues);
     } catch (error) {
       addIssue(issues, 'error', 'invalid-serialized-json', relativePath, error.message);
-    }
-  }
-
-  for (const uuid of referencedUuids) {
-    if (!uuidOwners.has(uuid)) {
-      addIssue(issues, 'warning', 'unresolved-asset-uuid', '<serialized-assets>', 'UUID is not declared under project assets; it may belong to an internal or mounted database', { uuid });
     }
   }
 

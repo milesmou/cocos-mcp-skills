@@ -32,7 +32,7 @@ test('validateProject reports broken object references and missing metadata', as
   }
 });
 
-test('validateProject accepts a minimal internally consistent prefab', async () => {
+test('validateProject accepts a structurally valid prefab with an external asset reference', async () => {
   const project = await mkdtemp(join(tmpdir(), 'cocos-skill-test-'));
   try {
     const assets = join(project, 'assets');
@@ -40,13 +40,14 @@ test('validateProject accepts a minimal internally consistent prefab', async () 
     await json(join(project, 'package.json'), { creator: { version: '3.8.8' } });
     await json(join(assets, 'ok.prefab'), [
       { __type__: 'cc.Prefab', data: { __id__: 1 } },
-      { __type__: 'cc.Node', _name: 'Root', _children: [], _components: [] }
+      { __type__: 'cc.Node', _name: 'Root', _children: [], _components: [{ __id__: 2 }] },
+      { __type__: 'cc.Sprite', _spriteFrame: { __uuid__: '33333333-3333-4333-8333-333333333333' } }
     ]);
     await json(join(assets, 'ok.prefab.meta'), { uuid: '22222222-2222-4222-8222-222222222222', subMetas: {} });
 
     const result = await validateProject(project);
     assert.equal(result.valid, true);
-    assert.equal(result.summary.errors, 0);
+    assert.deepEqual(result.issues, []);
   } finally {
     await rm(project, { recursive: true, force: true });
   }

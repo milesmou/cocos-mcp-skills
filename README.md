@@ -1,40 +1,25 @@
 # cocos-mcp-skills
 
-仅适用于 Cocos Creator 3.8.5 及以上的 3.8.x 版本（`>=3.8.5 <3.9.0`）的 MCP 工具与技能集合，不适用于其他版本。支持场景与 Prefab 编辑、UI 拼装、资源和脚本协作、运行时排障与性能分析。
-
-- [cocos-mcp](cocos-mcp/README.md)：安装到 Codex，自动检查工程桥接，提供编辑器、游戏运行时和 Chrome DevTools 工具。
-- [cocos-skill](cocos-skill/README.md)：统一技能入口，组织 UI 制作、业务开发和任务验收流程。
+面向 Cocos Creator 3.8.5 及以上的 3.8.x 版本（`>=3.8.5 <3.9.0`）的辅助诊断技能，提供离线结构检查、素材图册、严格 RGBA 图片比较和 Chrome Web 预览排障。
 
 ## 安装
 
-需要 Node.js 18+。在仓库根目录执行：
+在本仓库根目录执行下方命令（需要 Node.js 18+）。安装器只链接用户级技能，源码目录需保留。
 
 ```powershell
 node scripts/install-codex.js
 ```
 
-安装器注册 `cocos-mcp`，并链接用户级 `cocos-skill`。
+场景、Prefab、资源和 UI 编辑使用独立的 [Funplay MCP](https://github.com/FunplayAI/funplay-cocos-mcp)。在 Creator 的 **Funplay > MCP Server** 中为 Codex 选择“配置 + Skills”，安装 `funplay-cocos-mcp-workflow` 和 `funplay-cocos-ui-composition`，并用 `get_project_info` 核对连接。Chrome Web 预览排障使用独立的 [Chrome DevTools MCP](https://github.com/ChromeDevTools/chrome-devtools-mcp)。
 
-桥接随 Creator 自动启动，使用默认配置并开放全部工具，无需编辑器菜单或设置面板。保留源码目录；当前会话未加载工具时，重新连接 MCP。
+## 从旧版迁移
 
-需要 Chrome 控制台、网络、性能和内存分析时，安装可选运行时（环境与授权要求见 [DevTools 文档](cocos-mcp/docs/DEVTOOLS.md)）：
-
-```powershell
-node scripts/install-codex.js --devtools
-```
+先按上述步骤接入官方 Funplay 扩展，并通过 `get_project_info` 验证目标工程。随后在 Codex 配置中移除指向本仓库旧入口 `cocos-mcp/bin/cocos-mcp.js` 的服务条目。若工程仍启用此前安装的 `cocos-mcp-bridge`，在 Creator 扩展管理器中停用旧扩展；工程预览模板若有自定义内容，先核对并备份，再按工程需要调整。旧版安装器已建立的技能链接可直接复用。
 
 ## 使用
 
 在 Codex 中指定工程和任务，例如：
 
-> 使用 $cocos-skill 调整 D:/Games/MyGame 的登录页，完成后验证布局与交互。
+> 使用 $cocos-skill 离线检查 D:/Games/MyGame 的场景、Prefab 和 .meta。
 
-Agent 会连接目标工程，首次使用时安装唯一插件 `cocos-mcp-bridge` 和预览模板。出现重启提示后，保存并完全重启 Creator，再次连接确认 `connected: true`。读取游戏运行时数据前，打开或刷新原 Web 预览。
-
-旧插件迁移与连接说明见 [安装文档](cocos-mcp/docs/CODEX_SETUP.md)，能力与参数见 [工具手册](cocos-mcp/docs/TOOLS.md)。开发和检查命令见 [CONTRIBUTING.md](cocos-mcp/CONTRIBUTING.md)，Agent 约定见 [AGENTS.md](AGENTS.md)。
-
-外部工程操作前显式读取目标工程规则。项目约定在游戏工程维护，共享规则由项目引用 cocos3-toolkit 的 `docs/project/AGENTS.md`。
-
-## 来源
-
-`cocos-mcp` **fork 自 [FunplayAI/funplay-cocos-mcp](https://github.com/FunplayAI/funplay-cocos-mcp)**，保留 Funplay MIT 声明。技能与桥接辅助能力由本仓库统一维护，历史来源和许可边界见 [UPSTREAM.md](UPSTREAM.md)。
+图册、图片比较和排障的用法见 [cocos-skill](cocos-skill/SKILL.md)。开发约定与来源分别见 [AGENTS.md](AGENTS.md) 和 [UPSTREAM.md](UPSTREAM.md)。

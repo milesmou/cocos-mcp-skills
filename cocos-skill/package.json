@@ -2,7 +2,7 @@
   "name": "cocos-skill",
   "version": "0.1.0",
   "private": true,
-  "description": "Cocos Creator task workflows, UI planning and verification helpers",
+  "description": "Cocos Creator offline structure, image comparison and browser diagnostics",
   "engines": {
     "node": ">=18"
   },
