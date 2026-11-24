@@ -7,7 +7,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "check": "node --check scripts/validate-project.mjs && node --check scripts/dashboard-projects.mjs && node --check scripts/dashboard-launch.mjs",
+    "check": "node --check scripts/validate-project.mjs && node --check scripts/dashboard-projects.mjs && node --check scripts/dashboard-launch.mjs && node --check scripts/dashboard-relay.mjs && node --check scripts/apply-funplay-defaults.mjs",
     "test": "node --test"
   },
   "dependencies": {

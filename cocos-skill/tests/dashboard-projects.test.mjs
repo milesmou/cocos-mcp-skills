@@ -7,6 +7,8 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
+import { hasDashboardWork } from '../scripts/dashboard-launch.mjs';
+
 const execFileAsync = promisify(execFile);
 const script = fileURLToPath(new URL('../scripts/dashboard-projects.mjs', import.meta.url));
 
@@ -53,4 +55,13 @@ test('open refuses alternate registries and relative project paths before launch
   const run = (...args) => execFileAsync(process.execPath, [script, 'open', ...args]);
   await assert.rejects(run('--path', join(tmpdir(), 'Project'), '--profiles', tmpdir()), /Unknown option: --profiles/);
   await assert.rejects(run('--path', 'relative-project'), /--path must be an absolute project directory/);
+});
+
+test('Dashboard restart preflight preserves project operations and editor downloads or upgrades', () => {
+  const idleProjects = { map: { project: { progress: 'idle', state: 'success' } } };
+  const idleEditors = { editor: { Creator3D: [{ progress: 'finish', state: 'success' }] } };
+  assert.equal(hasDashboardWork(idleProjects, idleEditors), false);
+  assert.equal(hasDashboardWork({ map: { project: { progress: 'create', state: 'executing' } } }, idleEditors), true);
+  assert.equal(hasDashboardWork(idleProjects, { editor: { Creator3D: [{ progress: 'download' }] } }), true);
+  assert.equal(hasDashboardWork(idleProjects, { editor: { Creator3D: [{ progress: 'finish', upgrading: true }] } }), true);
 });

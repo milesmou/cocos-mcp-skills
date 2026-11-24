@@ -7,11 +7,11 @@ description: 通过 Cocos Dashboard 查询、打开、导入和移除工程，�
 
 诊断功能适用于 Creator `>=3.8.5 <3.9.0`。场景、Prefab、资源编辑及 UI 制作和在线验收由 Funplay 的 `funplay-cocos-mcp-workflow` 与 `funplay-cocos-ui-composition` 提供。需要操作目标工程时，先读取工程适用的规则，再使用对应的 [Funplay 官方技能](https://github.com/FunplayAI/funplay-cocos-mcp/blob/main/docs/PROJECT_WORKFLOWS.md#built-in-skill-references)。
 
-需要安装或迁移 Funplay MCP 时，按 [Funplay MCP 安装默认](modules/setup-funplay-mcp.md)执行全局安装，并在目标工程设置 `full` 和关闭 MCP 控制台日志。
+需要安装、更新或迁移 Funplay MCP 时，按 [Funplay MCP 安装默认](modules/setup-funplay-mcp.md)执行全局安装，并应用 `full`、关闭 MCP 控制台日志和默认选择 Codex 的设置。
 
 ## Dashboard 工程管理
 
-需要查询工程或编辑器、通过命令行冷启动已登记的工程、导入项目或从列表移除条目时，读取 [Dashboard 工程管理](modules/manage-dashboard-projects.md)。
+需要查询工程或编辑器、无需识屏地通过 Dashboard 打开已登记的工程、导入项目或从列表移除条目时，读取 [Dashboard 工程管理](modules/manage-dashboard-projects.md)。
 
 ## 磁盘结构检查
 

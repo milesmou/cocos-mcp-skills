@@ -167,7 +167,7 @@ async function readProjects(profiles, snapshot) {
   return { registered, runtime, status };
 }
 
-async function openProject(project, profiles, dashboard) {
+async function openProject(project, profiles, dashboard, registered) {
   if (!project.registration) throw new Error('Project is not registered in Dashboard. Import it first.');
   if (project.registration.type !== '3D' || !project.exists || !project.assets || !project.configuredVersion) {
     throw new Error('Open requires a registered Creator 3.x project with assets and a configured Creator version');
@@ -186,7 +186,7 @@ async function openProject(project, profiles, dashboard) {
   return launchDashboardProject(project, dashboard, async () => {
     const { registered, runtime } = await readProjects(profiles, false);
     return inspectProject(project.path, registered, profiles, runtime);
-  });
+  }, { profiles, registered });
 }
 
 const commandOptions = {
@@ -233,8 +233,8 @@ async function main([command, ...args]) {
   if (command === 'projects') return { ...status, projects: registered.filter(matchesProject) };
   const project = await inspectProject(values.path, registered, profiles, runtime);
   if (command === 'inspect') return { ...status, project };
-  const result = await openProject(project, profiles, values.dashboard);
-  if (['dashboard-running', 'started', 'requested'].includes(result.status)) process.exitCode = 2;
+  const result = await openProject(project, profiles, values.dashboard, registered);
+  if (['started', 'requested'].includes(result.status)) process.exitCode = 2;
   return result;
 }
 

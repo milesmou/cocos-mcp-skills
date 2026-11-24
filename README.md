@@ -23,4 +23,4 @@ node scripts/install-codex.js
 
 > 使用 $cocos-skill 离线检查 D:/Games/MyGame 的场景、Prefab 和 .meta。
 
-工程和编辑器查询、命令行冷启动、导入及移除操作见 [Dashboard 工程管理](cocos-skill/modules/manage-dashboard-projects.md)。图册、图片比较和排障的用法见 [cocos-skill](cocos-skill/SKILL.md)。开发约定与来源分别见 [AGENTS.md](AGENTS.md) 和 [UPSTREAM.md](UPSTREAM.md)。
+工程和编辑器查询、无需识屏的命令行启动、导入及移除操作见 [Dashboard 工程管理](cocos-skill/modules/manage-dashboard-projects.md)。图册、图片比较和排障的用法见 [cocos-skill](cocos-skill/SKILL.md)。开发约定与来源分别见 [AGENTS.md](AGENTS.md) 和 [UPSTREAM.md](UPSTREAM.md)。

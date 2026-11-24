@@ -1,13 +1,17 @@
 import { execFile, spawn } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
-import { basename, isAbsolute, normalize } from 'node:path';
+import { basename, isAbsolute, join, normalize } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { promisify } from 'node:util';
 
 import WebSocket from 'ws';
 
+import { findDashboardRelay } from './dashboard-relay.mjs';
+
 const execFileAsync = promisify(execFile);
 const supportedVersion = '2.2.2';
+const powershell = ['-NoProfile', '-NonInteractive', '-Command'];
 
 async function dashboardInfo(executable) {
   if (executable && (!isAbsolute(executable) || basename(executable).toLowerCase() !== 'cocosdashboard.exe')) {
@@ -16,20 +20,70 @@ async function dashboardInfo(executable) {
   const script = `
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
-$running = @(Get-Process -Name CocosDashboard -ErrorAction SilentlyContinue).Count -gt 0
+$dashboards = @(Get-CimInstance Win32_Process -Filter "Name = 'CocosDashboard.exe'" | Where-Object { $_.CommandLine -notmatch '\\s--type=' })
+if ($dashboards.Count -gt 1) { throw 'More than one Dashboard instance is running.' }
+$running = $dashboards | Select-Object -First 1
+$creators = @(Get-Process -Name CocosCreator,CocosCreator3D -ErrorAction SilentlyContinue).Count
 $exe = $env:COCOS_SKILL_DASHBOARD_EXE
+if ($running) {
+  if (-not $running.ExecutablePath) { throw 'Cannot verify the running Dashboard executable.' }
+  if ($exe -and $exe -ne $running.ExecutablePath) { throw 'The running Dashboard uses a different executable.' }
+  $exe = $running.ExecutablePath
+}
 if (-not $running -and -not $exe) {
   $command = Get-ItemProperty -LiteralPath 'Registry::HKEY_CLASSES_ROOT\\cocos-dashboard\\shell\\open\\command' -ErrorAction SilentlyContinue
   if ($command.'(default)' -match '^"([^"]+)"\\s+"%1"\\s*$') { $exe = $Matches[1] }
 }
-$version = if (-not $running -and $exe) { (Get-Item -LiteralPath $exe).VersionInfo.ProductVersion }
-ConvertTo-Json -InputObject @{ running = $running; executable = $exe; version = $version } -Compress`;
-  const { stdout } = await execFileAsync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
-    env: { ...process.env, COCOS_SKILL_DASHBOARD_EXE: executable ?? '' },
+$version = if ($exe) { (Get-Item -LiteralPath $exe).VersionInfo.ProductVersion }
+ConvertTo-Json -InputObject @{ pid = $running.ProcessId; executable = $exe; version = $version; creators = $creators } -Compress`;
+  const { stdout } = await execFileAsync('powershell.exe', [...powershell, script], {
+    env: { ...process.env, COCOS_SKILL_DASHBOARD_EXE: executable ? normalize(executable) : '' },
     windowsHide: true,
     timeout: 10000
   });
   return JSON.parse(stdout);
+}
+
+export function hasDashboardWork(projects, editors) {
+  const projectBusy = Object.values(projects.map ?? {}).some(({ progress, state }) =>
+    (progress !== 'open' && state === 'executing') || ['create', 'download', 'unzip', 'install', 'upgrade'].includes(progress));
+  const editorBusy = Object.values(editors.editor ?? {}).flat().some(({ progress, state, upgrading }) =>
+    upgrading || state === 'executing' || (progress && progress !== 'finish'));
+  return projectBusy || editorBusy;
+}
+
+async function closeIdleDashboard(dashboard, profiles) {
+  const [projects, editors] = await Promise.all(['project.json', 'editor.json'].map(async (name) =>
+    JSON.parse((await readFile(join(profiles, name), 'utf8')).replace(/^\uFEFF/, ''))));
+  if (hasDashboardWork(projects, editors)) throw new Error('Dashboard has unfinished work and was left running');
+
+  // Send the normal close request. A refusal or an active Creator leaves the Dashboard in place.
+  const script = `
+$ErrorActionPreference = 'Stop'
+$id = [int]$env:COCOS_SKILL_DASHBOARD_PID
+$app = Get-Process -Id $id -ErrorAction SilentlyContinue
+if (-not $app) { exit 0 }
+if ($app.ProcessName -ne 'CocosDashboard' -or $app.Path -ne $env:COCOS_SKILL_DASHBOARD_EXE) { throw 'Dashboard identity changed.' }
+if (Get-Process -Name CocosCreator,CocosCreator3D -ErrorAction SilentlyContinue) { throw 'A Creator session is active.' }
+if ($app.MainWindowHandle -eq 0) {
+  Start-Process -FilePath $app.Path -ArgumentList 'cocos-dashboard://panel/MAIN.project' -WindowStyle Hidden
+  for ($i = 0; $i -lt 12 -and $app.MainWindowHandle -eq 0 -and -not $app.HasExited; $i++) {
+    Start-Sleep -Milliseconds 150
+    $app.Refresh()
+  }
+}
+if ($app.HasExited) { exit 0 }
+if (Get-Process -Name CocosCreator,CocosCreator3D -ErrorAction SilentlyContinue) { throw 'A Creator session started during the close check.' }
+if (-not $app.CloseMainWindow() -or -not $app.WaitForExit(6000)) { throw 'Dashboard did not exit normally; it was left running.' }`;
+  try {
+    await execFileAsync('powershell.exe', [...powershell, script], {
+      env: { ...process.env, COCOS_SKILL_DASHBOARD_PID: String(dashboard.pid), COCOS_SKILL_DASHBOARD_EXE: dashboard.executable },
+      windowsHide: true,
+      timeout: 12000
+    });
+  } catch (error) {
+    throw new Error(error.stderr?.trim() || error.message, { cause: error });
+  }
 }
 
 async function reserveLoopbackPort() {
@@ -153,12 +207,7 @@ async function requestOpen(session, pid, project) {
   throw new Error('Dashboard did not finish initializing its project launcher');
 }
 
-export async function launchDashboardProject(project, executable, readState) {
-  const dashboard = await dashboardInfo(executable);
-  if (dashboard.running) return { status: 'dashboard-running', path: project.path };
-  if (!dashboard.executable) throw new Error('Dashboard protocol is not registered. Supply --dashboard with the executable path.');
-  if (dashboard.version !== supportedVersion) throw new Error(`Cold launch requires Dashboard ${supportedVersion}, found ${dashboard.version ?? 'unknown'}`);
-
+async function startDashboard(dashboard, project) {
   const port = await reserveLoopbackPort();
   const child = spawn(dashboard.executable, [`--inspect=127.0.0.1:${port}`], {
     detached: true, stdio: 'ignore', windowsHide: true
@@ -197,19 +246,43 @@ export async function launchDashboardProject(project, executable, readState) {
   }
 
   if (accepted === false) throw new Error('Dashboard declined the open request. Check the Dashboard window.');
+  return child.pid;
+}
+
+export async function launchDashboardProject(project, executable, readState, { profiles, registered }) {
+  const dashboard = await dashboardInfo(executable);
+  if (!dashboard.executable) throw new Error('Dashboard protocol is not registered. Supply --dashboard with the executable path.');
+  if (dashboard.version !== supportedVersion) throw new Error(`Command-line launch requires Dashboard ${supportedVersion}, found ${dashboard.version ?? 'unknown'}`);
+
+  let dashboardPid;
+  let mode = 'cold';
+  if (dashboard.pid && dashboard.creators) {
+    const relay = await findDashboardRelay(registered, dashboard.pid);
+    if (!relay) throw new Error('Dashboard has a running Creator session, but no verified Funplay relay is available. Existing sessions were preserved.');
+    if (await relay(project.path) !== true) throw new Error('Creator did not acknowledge sending the Dashboard request');
+    dashboardPid = dashboard.pid;
+    mode = 'relay';
+  } else {
+    if (dashboard.pid) {
+      await closeIdleDashboard(dashboard, profiles);
+      mode = 'restarted';
+    }
+    dashboardPid = await startDashboard(dashboard, project);
+  }
+
   const deadline = Date.now() + 35000;
   let creator;
   while (Date.now() < deadline) {
     const state = await readState();
-    creator = state.processes.find(({ parentPid }) => parentPid === child.pid);
+    creator = state.processes.find(({ parentPid }) => parentPid === dashboardPid);
     if (creator && state.registration?.progress === 'open' && state.registration.state === 'success') {
       const expectedEditor = creator.executable && project.editors.some(({ file, installed }) =>
         installed && normalize(file).toLowerCase() === normalize(creator.executable).toLowerCase());
       if (!expectedEditor) throw new Error('Dashboard started the target, but the Creator executable did not match the requested version');
-      return { status: 'opened', path: project.path, version: project.configuredVersion, dashboardPid: child.pid, creator };
+      return { status: 'opened', mode, path: project.path, version: project.configuredVersion, dashboardPid, creator };
     }
     await delay(700);
   }
-  return { status: creator ? 'started' : 'requested', path: project.path, version: project.configuredVersion,
-    dashboardPid: child.pid, ...(creator && { creator }) };
+  return { status: creator ? 'started' : 'requested', mode, path: project.path, version: project.configuredVersion,
+    dashboardPid, ...(creator && { creator }) };
 }

@@ -32,9 +32,11 @@ node $script open --path '<已登记的 Creator 3.x 工程根目录>'
 Windows 带桌面会话时，`open` 使用本机 Dashboard 登记，核对完整工程路径、工程和登记版本及已安装编辑器。默认从 Windows 的 `cocos-dashboard` 协议注册项定位程序，也可传入 `--dashboard <CocosDashboard.exe 的绝对路径>`。
 
 - 目标已打开时返回 `already-running`，附经核对的 Creator 进程。
-- Dashboard 尚未运行时，启动 2.2.2，通过该新进程的临时本机调试端口调用 Dashboard 的工程启动逻辑，随即关闭端口。该路径无需识屏，也无需已有 Creator 会话。版本检查限定在已验证的 Dashboard 2.2.2。
+- Dashboard 尚未运行时直接启动，输出 `mode: "cold"`。只有 Dashboard 已运行且没有进行中的登记任务时，请求它正常退出，再用原登记和设置启动，输出 `mode: "restarted"`。这两种方式都在新启动的 Dashboard 内调用工程启动逻辑，随后关闭临时本机调试端口。
+- 当 Dashboard 已有 Creator 会话时，CLI 可通过已核对的本机 Funplay 会话，把路径交给现有 Dashboard，输出 `mode: "relay"`。源 Creator 必须是该 Dashboard 启动的子进程。缺少可用 Funplay 会话、发现进行中的任务或 Dashboard 无法正常退出时，CLI 报告阻塞原因，保留现有会话。
+- 三种启动方式均无需截图。命令行启动适用于已验证的 Dashboard 2.2.2，使用原有本机登记。
 - 返回 `opened` 时，已核对目标 Creator 的完整工程路径、Dashboard 父进程和 Dashboard 的打开成功状态。需要在线编辑时，继续核对目标窗口或 Funplay 的 `get_project_info`。
-- 返回 `dashboard-running` 时，用下文的 Dashboard 界面流程继续打开，并复用已运行的 Dashboard。`started` 表示已发现目标进程，`requested` 表示已发起请求，需从界面或 `inspect` 继续核对。这三种状态使用退出码 2。
+- `started` 表示已发现目标进程，`requested` 表示已发起请求，可用 `inspect` 继续核对。这两种状态使用退出码 2。用户要求无需识屏时，命令行受阻应报告原因。
 
 ## 在 Dashboard 界面中操作
 
@@ -42,12 +44,12 @@ Windows 带桌面会话时，`open` 使用本机 Dashboard 登记，核对完整
 
 | 操作 | 在 Dashboard 中执行 | 验证结果 |
 | --- | --- | --- |
-| 打开工程 | 命令行打开不可用时，在「项目」页找到目标，核对关联 Creator 版本后打开。缺少登记时先走导入。遇到会改写工程版本的提示时，按用户确认的目标版本处理。 | 等待 Creator 工程窗口就绪，再用 `inspect` 核对进程对应的完整路径和编辑器文件。需要在线编辑时，按工程规则用 Funplay `get_project_info` 核对连接。 |
+| 打开工程 | 用户允许操作界面时，在「项目」页找到目标，核对关联 Creator 版本后打开。缺少登记时先走导入。遇到会改写工程版本的提示时，按用户确认的目标版本处理。 | 等待 Creator 工程窗口就绪，再用 `inspect` 核对进程对应的完整路径和编辑器文件。需要在线编辑时，按工程规则用 Funplay `get_project_info` 核对连接。 |
 | 导入工程 | Creator 3.x 先用 `inspect` 核对工程根目录、`assets` 和 `creator.version`。已登记则复用条目。否则点击「导入项目」，在目录选择器选中完整工程根目录。 | 重新读取登记记录，核对完整路径和 Creator 版本。 |
 | 从列表移除 | 打开目标工程的操作菜单，选择移除，在确认对话框中选择保留工程文件。用户明确要求将工程移入回收站时，按当前桌面工具的确认要求单独处理。 | 重新读取登记记录。移除成功后，该路径已不在列表，且选择保留时对应目录仍存在。 |
 
 ## 接口与交付
 
-Dashboard 2.2.2 的工程列表和编辑器查询分别对应 `lib-project:queryAll`、`lib-project:query`、`lib-editor:query`、`lib-editor:find`。Dashboard 界面通过安装包内的 Electron 消息打开、导入和移除工程。命令行 `open` 在新启动的 Dashboard 进程里调用与 `lib-project:open` 对应的实现。内部 `remove(path, true)` 会进入回收站分支，从列表移除时应在界面选择保留文件。
+Dashboard 2.2.2 的工程列表和编辑器查询分别对应 `lib-project:queryAll`、`lib-project:query`、`lib-editor:query`、`lib-editor:find`。Dashboard 界面通过安装包内的 Electron 消息打开、导入和移除工程。命令行 `open` 调用与 `lib-project:open` 对应的实现，或经 Creator 的 `open-project` 消息把请求交给同一个实现。内部 `remove(path, true)` 会进入回收站分支，从列表移除时应在界面选择保留文件。
 
 交付时报告完整工程路径、登记版本、匹配编辑器以及实际验证到的状态。分别记录已登记、已发起启动、已就绪和已移除。
