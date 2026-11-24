@@ -48,3 +48,9 @@ test('Dashboard snapshots preserve project identity and support version filters 
   assert.equal(inspected.editors[0].file, editor);
   assert.equal(inspected.assets, true);
 });
+
+test('open refuses alternate registries and relative project paths before launching Dashboard', async () => {
+  const run = (...args) => execFileAsync(process.execPath, [script, 'open', ...args]);
+  await assert.rejects(run('--path', join(tmpdir(), 'Project'), '--profiles', tmpdir()), /Unknown option: --profiles/);
+  await assert.rejects(run('--path', 'relative-project'), /--path must be an absolute project directory/);
+});

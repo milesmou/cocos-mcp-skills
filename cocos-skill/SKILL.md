@@ -11,7 +11,7 @@ description: 通过 Cocos Dashboard 查询、打开、导入和移除工程，�
 
 ## Dashboard 工程管理
 
-需要列出或筛选工程、查询已登记编辑器、打开或导入项目、从项目列表移除条目时，读取 [Dashboard 工程管理](modules/manage-dashboard-projects.md)。
+需要查询工程或编辑器、通过命令行冷启动已登记的工程、导入项目或从列表移除条目时，读取 [Dashboard 工程管理](modules/manage-dashboard-projects.md)。
 
 ## 磁盘结构检查
 

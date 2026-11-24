@@ -8,14 +8,17 @@ import { promisify } from 'node:util';
 
 import semver from 'semver';
 
+import { launchDashboardProject } from './dashboard-launch.mjs';
+
 const execFileAsync = promisify(execFile);
 const usage = `Usage:
   node dashboard-projects.mjs projects [--type 3D] [--version RANGE] [--filter JSON] [--snapshot]
   node dashboard-projects.mjs editors [--type Creator3D] [--version VERSION]
   node dashboard-projects.mjs inspect --path ABSOLUTE_PROJECT_PATH [--snapshot]
+  node dashboard-projects.mjs open --path ABSOLUTE_PROJECT_PATH [--dashboard ABSOLUTE_DASHBOARD_EXE]
 
-Use --profiles DIRECTORY to read alternate Dashboard profiles. Use --snapshot to skip process lookup.
-Output is JSON. Project and editor registry files are opened read-only.`;
+Use --profiles DIRECTORY with a query to read alternate Dashboard profiles. Use --snapshot to skip process lookup.
+Open uses the local Windows Dashboard registration. Output is JSON.`;
 
 function record(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -154,10 +157,43 @@ async function inspectProject(path, registered, profiles, runtime) {
   return { path: fullPath, exists, assets, configuredVersion, registration, editors, ...runtimeInfo(fullPath, runtime) };
 }
 
+async function readProjects(profiles, snapshot) {
+  const [registry, runtime] = await Promise.all([
+    readRegistry(profiles, 'project.json', 'map'),
+    runningProjects(snapshot)
+  ]);
+  const registered = await projectList(registry, runtime);
+  const status = { profiles, runtime: runtime.status, ...(runtime.reason && { runtimeReason: runtime.reason }) };
+  return { registered, runtime, status };
+}
+
+async function openProject(project, profiles, dashboard) {
+  if (!project.registration) throw new Error('Project is not registered in Dashboard. Import it first.');
+  if (project.registration.type !== '3D' || !project.exists || !project.assets || !project.configuredVersion) {
+    throw new Error('Open requires a registered Creator 3.x project with assets and a configured Creator version');
+  }
+  if (project.registration.version !== project.configuredVersion) throw new Error('Dashboard and project Creator versions disagree');
+  const editors = project.editors.filter((editor) => editor.installed);
+  if (!editors.length) throw new Error('The matching Creator version must be installed in Dashboard');
+  if (project.running) {
+    const processes = project.processes.filter(({ executable }) =>
+      executable && editors.some((editor) => pathKey(executable) === pathKey(editor.file)));
+    if (!processes.length) throw new Error('The project is running, but its Creator installation could not be verified');
+    return { status: 'already-running', path: project.path, version: project.configuredVersion, processes };
+  }
+  if (project.running === null) throw new Error('Could not verify whether the target project is already running');
+
+  return launchDashboardProject(project, dashboard, async () => {
+    const { registered, runtime } = await readProjects(profiles, false);
+    return inspectProject(project.path, registered, profiles, runtime);
+  });
+}
+
 const commandOptions = {
-  projects: ['type', 'version', 'filter', 'snapshot'],
-  editors: ['type', 'version'],
-  inspect: ['path', 'snapshot']
+  projects: ['type', 'version', 'filter', 'snapshot', 'profiles'],
+  editors: ['type', 'version', 'profiles'],
+  inspect: ['path', 'snapshot', 'profiles'],
+  open: ['path', 'dashboard']
 };
 
 async function main([command, ...args]) {
@@ -170,7 +206,7 @@ async function main([command, ...args]) {
   for (let index = 0; index < args.length; index += 1) {
     const option = args[index];
     const key = option.slice(2);
-    if (!option.startsWith('--') || (key !== 'profiles' && !commandOptions[command].includes(key))) {
+    if (!option.startsWith('--') || !commandOptions[command].includes(key)) {
       throw new Error(`Unknown option: ${option}`);
     }
     if (key === 'snapshot') {
@@ -191,13 +227,15 @@ async function main([command, ...args]) {
   }
 
   const matchesProject = command === 'projects' ? projectFilter(values) : null;
-  if (command === 'inspect' && (!values.path || !isAbsolute(values.path))) throw new Error('--path must be an absolute project directory');
-  const registry = await readRegistry(profiles, 'project.json', 'map');
-  const runtime = await runningProjects(values.snapshot);
-  const registered = await projectList(registry, runtime);
-  const status = { profiles, runtime: runtime.status, ...(runtime.reason && { runtimeReason: runtime.reason }) };
+  if (command !== 'projects' && (!values.path || !isAbsolute(values.path))) throw new Error('--path must be an absolute project directory');
+  if (command === 'open' && process.platform !== 'win32') throw new Error('Dashboard project launch is available on Windows');
+  const { registered, runtime, status } = await readProjects(profiles, values.snapshot);
   if (command === 'projects') return { ...status, projects: registered.filter(matchesProject) };
-  return { ...status, project: await inspectProject(values.path, registered, profiles, runtime) };
+  const project = await inspectProject(values.path, registered, profiles, runtime);
+  if (command === 'inspect') return { ...status, project };
+  const result = await openProject(project, profiles, values.dashboard);
+  if (['dashboard-running', 'started', 'requested'].includes(result.status)) process.exitCode = 2;
+  return result;
 }
 
 try {
