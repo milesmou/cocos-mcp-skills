@@ -4,8 +4,8 @@
 
 ## 目录与技能
 
-- `cocos-skill/` 是面向 Cocos Creator 3.8.5 及以上 3.8.x 的统一技能，唯一入口为 `SKILL.md`。`modules/` 维护 Chrome Web 预览排障，`scripts/` 保留离线对象表检查、图片图册和严格 RGBA 比较。
-- `scripts/install-codex.js` 使用仓库源码链接用户级技能，保持已有独立技能与 MCP 配置。Creator 扩展和 Codex MCP 注册使用官方 [Funplay MCP](https://github.com/FunplayAI/funplay-cocos-mcp) 提供的入口。
+- `cocos-skill/` 是工程管理和诊断的统一技能，唯一入口为 `SKILL.md`。`modules/` 维护 Windows Dashboard 工程管理与 Chrome Web 预览排障，`scripts/` 提供 Dashboard 登记查询和面向 Creator 3.8.5 及以上 3.8.x 的离线检查与图像工具。
+- `scripts/install-codex.js` 使用仓库源码链接用户级技能，保持已有独立技能与 MCP 配置。Creator 扩展和 Codex MCP 注册使用官方 Funplay 入口。默认按 Creator 版本全局安装扩展，并安装 Funplay 用户级技能。目标工程使用 `full` 并关闭 MCP 控制台日志，见 [Funplay MCP 安装默认](cocos-skill/modules/setup-funplay-mcp.md)。
 
 项目专属规则随目标工程维护，共享机制随 toolkit 维护。每个技能目录只维护一个技能入口，新增或调整能力时同步更新模块索引和适用范围。保留 [UPSTREAM.md](UPSTREAM.md) 与技能内来源记录，按来源保留对应许可。
 

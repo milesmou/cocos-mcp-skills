@@ -2,12 +2,15 @@
   "name": "cocos-skill",
   "version": "0.1.0",
   "private": true,
-  "description": "Cocos Creator offline structure, image comparison and browser diagnostics",
+  "description": "Cocos Dashboard project management and Cocos Creator diagnostics",
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "check": "node --check scripts/validate-project.mjs",
+    "check": "node --check scripts/validate-project.mjs && node --check scripts/dashboard-projects.mjs",
     "test": "node --test"
+  },
+  "dependencies": {
+    "semver": "7.8.6"
   }
 }

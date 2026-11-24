@@ -1,4 +1,4 @@
 interface:
   display_name: "Cocos Creator 辅助诊断"
-  short_description: "检查工程磁盘结构、生成素材图册、逐像素对比 UI 和排查 Web 预览"
+  short_description: "管理 Dashboard 工程、检查磁盘结构、生成素材图册、对比 UI 和排查 Web 预览"
   default_prompt: "使用 $cocos-skill 离线检查目标 Creator 工程的场景、Prefab 和 .meta。"

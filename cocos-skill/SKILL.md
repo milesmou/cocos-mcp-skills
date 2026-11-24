@@ -1,11 +1,17 @@
 ---
 name: cocos-skill
-description: 为 Cocos Creator 3.8.5 及以上的 3.8.x 工程提供磁盘结构检查、素材缩略图册、严格 RGBA 图片比较，以及 Chrome Web 预览的网络、CPU 和内存排障。
+description: 通过 Cocos Dashboard 查询、打开、导入和移除工程，并为 Cocos Creator 3.8.5 及以上的 3.8.x 工程提供磁盘结构检查、素材缩略图册、严格 RGBA 图片比较和 Chrome Web 预览排障。
 ---
 
 # Cocos Creator 辅助诊断
 
-适用于 Creator `>=3.8.5 <3.9.0`。场景、Prefab、资源编辑及 UI 制作和在线验收由 Funplay 的 `funplay-cocos-mcp-workflow` 与 `funplay-cocos-ui-composition` 提供。需要操作目标工程时，先读取工程适用的规则，再使用对应的 [Funplay 官方技能](https://github.com/FunplayAI/funplay-cocos-mcp/blob/main/docs/PROJECT_WORKFLOWS.md#built-in-skill-references)。
+诊断功能适用于 Creator `>=3.8.5 <3.9.0`。场景、Prefab、资源编辑及 UI 制作和在线验收由 Funplay 的 `funplay-cocos-mcp-workflow` 与 `funplay-cocos-ui-composition` 提供。需要操作目标工程时，先读取工程适用的规则，再使用对应的 [Funplay 官方技能](https://github.com/FunplayAI/funplay-cocos-mcp/blob/main/docs/PROJECT_WORKFLOWS.md#built-in-skill-references)。
+
+需要安装或迁移 Funplay MCP 时，按 [Funplay MCP 安装默认](modules/setup-funplay-mcp.md)执行全局安装，并在目标工程设置 `full` 和关闭 MCP 控制台日志。
+
+## Dashboard 工程管理
+
+需要列出或筛选工程、查询已登记编辑器、打开或导入项目、从项目列表移除条目时，读取 [Dashboard 工程管理](modules/manage-dashboard-projects.md)。
 
 ## 磁盘结构检查
 

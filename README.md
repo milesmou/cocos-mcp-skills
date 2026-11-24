@@ -1,16 +1,17 @@
 # cocos-mcp-skills
 
-面向 Cocos Creator 3.8.5 及以上的 3.8.x 版本（`>=3.8.5 <3.9.0`）的辅助诊断技能，提供离线结构检查、素材图册、严格 RGBA 图片比较和 Chrome Web 预览排障。
+提供 Windows 上的 Cocos Dashboard 工程管理，以及 Cocos Creator 3.8.5 及以上 3.8.x 版本（`>=3.8.5 <3.9.0`）的离线结构检查、素材图册、严格 RGBA 图片比较和 Chrome Web 预览排障。
 
 ## 安装
 
 在本仓库根目录执行下方命令（需要 Node.js 18+）。安装器只链接用户级技能，源码目录需保留。
 
 ```powershell
+npm --prefix cocos-skill ci
 node scripts/install-codex.js
 ```
 
-场景、Prefab、资源和 UI 编辑使用独立的 [Funplay MCP](https://github.com/FunplayAI/funplay-cocos-mcp)。在 Creator 的 **Funplay > MCP Server** 中为 Codex 选择“配置 + Skills”，安装 `funplay-cocos-mcp-workflow` 和 `funplay-cocos-ui-composition`，并用 `get_project_info` 核对连接。Chrome Web 预览排障使用独立的 [Chrome DevTools MCP](https://github.com/ChromeDevTools/chrome-devtools-mcp)。
+场景、Prefab、资源和 UI 编辑使用独立的 Funplay MCP。按 [Funplay MCP 安装默认](cocos-skill/modules/setup-funplay-mcp.md)全局安装扩展和 Codex 用户级技能，在目标工程开放全部工具、关闭 MCP 控制台日志，再配置 Codex 连接。Chrome Web 预览排障使用独立的 [Chrome DevTools MCP](https://github.com/ChromeDevTools/chrome-devtools-mcp)。
 
 ## 从旧版迁移
 
@@ -22,4 +23,4 @@ node scripts/install-codex.js
 
 > 使用 $cocos-skill 离线检查 D:/Games/MyGame 的场景、Prefab 和 .meta。
 
-图册、图片比较和排障的用法见 [cocos-skill](cocos-skill/SKILL.md)。开发约定与来源分别见 [AGENTS.md](AGENTS.md) 和 [UPSTREAM.md](UPSTREAM.md)。
+工程和编辑器的查询、打开、导入及移除操作见 [Dashboard 工程管理](cocos-skill/modules/manage-dashboard-projects.md)。图册、图片比较和排障的用法见 [cocos-skill](cocos-skill/SKILL.md)。开发约定与来源分别见 [AGENTS.md](AGENTS.md) 和 [UPSTREAM.md](UPSTREAM.md)。
